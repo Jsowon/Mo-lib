@@ -1,0 +1,12 @@
+exclude = [
+    "alembic/versions",
+]
+line-length = 88
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "I", "W"]
+# E: pycodestyle 스타일
+# F: pyflakes 에러
+# I: isort import 정렬
+# W: pycodestyle 경고
