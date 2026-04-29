@@ -9,6 +9,7 @@ from sqlalchemy import engine_from_config, pool
 # import app.models.user    # noqa: F401
 # import app.models.content # noqa: F401
 import app.models  # noqa: F401
+import app.models.cache  # noqa: F401
 from alembic import context
 
 # Mo:lib: 앱 모델 메타데이터 연결
