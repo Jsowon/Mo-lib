@@ -1,12 +1,9 @@
-
-
 import bcrypt
 
 from app.config import get_settings
 
 
 def hash_password(plain_password: str) -> str:
-
     rounds = get_settings().BCRYPT_ROUNDS
     salt = bcrypt.gensalt(rounds=rounds)
     hashed = bcrypt.hashpw(plain_password.encode("utf-8"), salt)

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text
+from sqlalchemy import DateTime, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,7 +12,7 @@ class RecommendationCache(Base):
     __tablename__ = "recommendation_cache"
 
     # 각 캐시 행의 고유 ID
-    id: Mapped[uuid.UUID] = mapped_column( 
+    id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     # "노르웨이의 숲_book"처럼 콘텐츠명 + 도메인 조합
