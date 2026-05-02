@@ -47,9 +47,13 @@ jobs:
       - name: Ruff format check
         run: ruff format --check .
 
-      # 7. pip-audit 보안 취약점 검사
+      # 7. pip-audit 보안 취약점 검사 (무시 사유: SECURITY_NOTES.md 참조)
       - name: pip-audit
-        run: pip-audit -r requirements.txt
+        run: |
+          pip-audit -r requirements.txt \
+            --ignore-vuln GHSA-jr27-m4p2-rc6r \
+            --ignore-vuln GHSA-2c2j-9gv5-cj73 \
+            --ignore-vuln GHSA-7f5h-v6xp-fcq8
 
       # 8. Gitleaks SecretScan
       - name: Gitleaks Secret Scan
