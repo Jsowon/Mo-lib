@@ -1,0 +1,59 @@
+name: Mo:lib CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-and-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 코드 체크아웃
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Python 3.11 세팅 + pip 캐시 (매 실행마다 풀 설치 방지)
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      # 3. CI용 .env 생성 — GitHub Secrets에서 더미 키 주입
+      - name: Set up .env for CI
+        run: |
+          cp .env.example .env
+          sed -i "s|your-secret-key-here|${{ secrets.CI_JWT_SECRET_KEY }}|" .env
+          sed -i "s|your-tmdb-api-key|${{ secrets.CI_TMDB_API_KEY }}|" .env
+          sed -i "s|your-spotify-client-id|${{ secrets.CI_SPOTIFY_CLIENT_ID }}|" .env
+          sed -i "s|your-spotify-client-secret|${{ secrets.CI_SPOTIFY_CLIENT_SECRET }}|" .env
+          sed -i "s|your-aladin-ttb-key|${{ secrets.CI_ALADIN_TTB_KEY }}|" .env
+
+      # 4. 의존성 설치
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 5. ruff 린트
+      - name: Ruff lint
+        run: ruff check .
+
+      # 6. ruff 포맷 체크
+      - name: Ruff format check
+        run: ruff format --check .
+
+      # 7. pip-audit 보안 취약점 검사
+      - name: pip-audit
+        run: pip-audit -r requirements.txt
+
+      # 8. Gitleaks SecretScan
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 9. Docker 빌드 확인
+      - name: Docker build check
+        run: docker build -t molib-api-check .
