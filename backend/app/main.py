@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.spotify import router as spotify_router
 from app.config import Settings, get_settings
 
 app = FastAPI(
@@ -22,6 +23,7 @@ def _setup_cors(application: FastAPI, settings: Settings) -> None:
 
 
 _setup_cors(app, get_settings())
+app.include_router(spotify_router)
 
 
 @app.get("/health", tags=["health"])
