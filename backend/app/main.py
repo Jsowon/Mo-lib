@@ -39,4 +39,3 @@ app.include_router(spotify_router)
 async def health_check():
     """서버 상태 확인"""
     return {"status": "ok", "service": "Mo:lib"}
-

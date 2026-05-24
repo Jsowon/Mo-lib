@@ -49,4 +49,3 @@ def error_response(code: str, message: str) -> dict:
             "message": message,
         }
     }
-
