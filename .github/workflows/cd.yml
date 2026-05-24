@@ -1,0 +1,30 @@
+name: Mo:lib CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/${{ secrets.EC2_USER }}/Mo-lib
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            cd backend
+            cp /home/${{ secrets.EC2_USER }}/.env.molib .env
+
+            docker compose -f docker-compose.prod.yml up -d --build
+
+            docker compose -f docker-compose.prod.yml exec -T api \
+              alembic upgrade head
