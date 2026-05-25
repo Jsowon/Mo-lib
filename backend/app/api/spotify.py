@@ -1,9 +1,13 @@
+import logging
+
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
 from app.core.normalizer import ContentItem, normalize_spotify_track
 from app.core.spotify import spotify_client
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -11,6 +15,7 @@ router = APIRouter(prefix="/search", tags=["search"])
 class MusicSearchResponse(BaseModel):
     results: list[ContentItem]
     total: int
+    error: str | None = None
 
 
 @router.get("/music", response_model=MusicSearchResponse)
@@ -23,13 +28,11 @@ async def search_music(
     try:
         items = await spotify_client.search_tracks(query=q, limit=limit)
     except httpx.HTTPStatusError as e:
-        raise HTTPException(
-            status_code=502, detail=f"Spotify API 오류: {e.response.status_code}"
-        )
+        logger.warning("Spotify API 오류: %s", e.response.status_code)
+        return MusicSearchResponse(results=[], total=0, error=f"Spotify API 오류: {e.response.status_code}")
     except httpx.HTTPError:
-        raise HTTPException(
-            status_code=503, detail="Spotify 서비스에 연결할 수 없습니다."
-        )
+        logger.warning("Spotify 서비스 연결 실패")
+        return MusicSearchResponse(results=[], total=0, error="Spotify 서비스에 연결할 수 없습니다.")
 
     return MusicSearchResponse(
         results=[normalize_spotify_track(i) for i in items], total=len(items)

@@ -2,8 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import map, recommendation
+from app.api.aladin import router as aladin_router
 from app.api.auth import router as auth_router
 from app.api.spotify import router as spotify_router
+from app.api.tmdb import router as tmdb_router
 from app.config import Settings, get_settings
 from app.errors import register_error_handlers
 
@@ -33,6 +35,8 @@ app.include_router(recommendation.router, prefix="/api/v1")
 app.include_router(map.router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(spotify_router)
+app.include_router(aladin_router)
+app.include_router(tmdb_router)
 
 
 @app.get("/health", tags=["health"])
