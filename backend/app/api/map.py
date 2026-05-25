@@ -112,7 +112,7 @@ class MapDetailResponse(BaseModel):
     response_model=MapResponse,
     status_code=201,
     summary="지도 생성",
-    description="새 몰입 지도를 생성합니다. title 미입력 시 오늘 날짜로 자동 설정됩니다.",
+    description="새 몰입 지도를 생성합니다. title 미입력 시 오늘 날짜로 자동 설정됩니다.",  # noqa: E501
 )
 async def create_map(request: MapCreateRequest, db: AsyncSession = Depends(get_db)):
     map_title = request.title or (

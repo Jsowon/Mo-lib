@@ -22,7 +22,7 @@ class MusicSearchResponse(BaseModel):
     "/music",
     response_model=MusicSearchResponse,
     summary="음악 검색",
-    description="Spotify에서 음악을 검색합니다. API 장애 시 빈 결과와 error 메시지를 반환합니다.",
+    description="Spotify에서 음악을 검색합니다. API 장애 시 빈 결과와 error 메시지를 반환합니다.",  # noqa: E501
 )
 async def search_music(
     q: str = Query(..., min_length=1, description="검색어"),
@@ -34,10 +34,14 @@ async def search_music(
         items = await spotify_client.search_tracks(query=q, limit=limit)
     except httpx.HTTPStatusError as e:
         logger.warning("Spotify API 오류: %s", e.response.status_code)
-        return MusicSearchResponse(results=[], total=0, error=f"Spotify API 오류: {e.response.status_code}")
+        return MusicSearchResponse(
+            results=[], total=0, error=f"Spotify API 오류: {e.response.status_code}"
+        )
     except httpx.HTTPError:
         logger.warning("Spotify 서비스 연결 실패")
-        return MusicSearchResponse(results=[], total=0, error="Spotify 서비스에 연결할 수 없습니다.")
+        return MusicSearchResponse(
+            results=[], total=0, error="Spotify 서비스에 연결할 수 없습니다."
+        )
 
     return MusicSearchResponse(
         results=[normalize_spotify_track(i) for i in items], total=len(items)

@@ -28,7 +28,7 @@ def make_cache_key(content_id: str, domain: str, exclude_domains: list[str]) -> 
     "",
     response_model=RecommendationResponse,
     summary="크로스 도메인 콘텐츠 추천",
-    description="콘텐츠 정보를 입력하면 Gemini AI가 영화·음악·도서를 추천합니다. 동일 요청은 24시간 캐시됩니다.",
+    description="콘텐츠 정보를 입력하면 Gemini AI가 영화·음악·도서를 추천합니다. 동일 요청은 24시간 캐시됩니다.",  # noqa: E501
 )
 async def get_recommendation(
     request: RecommendationRequest, db: AsyncSession = Depends(get_db)

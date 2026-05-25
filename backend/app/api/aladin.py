@@ -22,7 +22,7 @@ class BookSearchResponse(BaseModel):
     "/book",
     response_model=BookSearchResponse,
     summary="도서 검색",
-    description="알라딘에서 도서를 검색합니다. API 장애 시 빈 결과와 error 메시지를 반환합니다.",
+    description="알라딘에서 도서를 검색합니다. API 장애 시 빈 결과와 error 메시지를 반환합니다.",  # noqa: E501
 )
 async def search_book(
     q: str = Query(..., min_length=1, description="도서 검색어"),
@@ -32,10 +32,14 @@ async def search_book(
         items = await aladin_client.search_books(query=q, limit=limit)
     except httpx.HTTPStatusError as e:
         logger.warning("알라딘 API 오류: %s", e.response.status_code)
-        return BookSearchResponse(results=[], total=0, error=f"알라딘 API 오류: {e.response.status_code}")
+        return BookSearchResponse(
+            results=[], total=0, error=f"알라딘 API 오류: {e.response.status_code}"
+        )
     except httpx.HTTPError:
         logger.warning("알라딘 서비스 연결 실패")
-        return BookSearchResponse(results=[], total=0, error="알라딘 서비스에 연결할 수 없습니다.")
+        return BookSearchResponse(
+            results=[], total=0, error="알라딘 서비스에 연결할 수 없습니다."
+        )
 
     return BookSearchResponse(
         results=[normalize_aladin_book(i) for i in items], total=len(items)

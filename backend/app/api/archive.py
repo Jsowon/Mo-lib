@@ -64,7 +64,7 @@ async def get_archive(db: AsyncSession = Depends(get_db)):
     "/{node_id}",
     status_code=204,
     summary="아카이브에서 제거",
-    description="노드를 아카이브에서 제거합니다 (is_archived=False). 노드 자체는 삭제되지 않습니다.",
+    description="노드를 아카이브에서 제거합니다 (is_archived=False). 노드 자체는 삭제되지 않습니다.",  # noqa: E501
 )
 async def remove_from_archive(node_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Node).where(Node.id == uuid.UUID(node_id)))
