@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,22 +16,23 @@ from app.services.ai_service import get_ai_recommendation
 
 router = APIRouter(prefix="/recommendations", tags=["recommendation"])
 
+CACHE_TTL_HOURS = 24
+
 
 def make_cache_key(content_id: str, domain: str, exclude_domains: list[str]) -> str:
-    """캐시 키 생성"""
     exclude_str = ",".join(sorted(exclude_domains))
     return f"{domain}:{content_id}:exclude:{exclude_str}"
 
 
-@router.post("", response_model=RecommendationResponse)
+@router.post(
+    "",
+    response_model=RecommendationResponse,
+    summary="크로스 도메인 콘텐츠 추천",
+    description="콘텐츠 정보를 입력하면 Gemini AI가 영화·음악·도서를 추천합니다. 동일 요청은 24시간 캐시됩니다.",
+)
 async def get_recommendation(
     request: RecommendationRequest, db: AsyncSession = Depends(get_db)
 ):
-    """
-    콘텐츠 입력 시 크로스 도메인 추천 요청
-    - 캐시 있으면 캐시 반환
-    - 캐시 없으면 Gemini 호출 후 캐시 저장
-    """
     # 1. 캐시 조회
     cache_key = make_cache_key(
         request.content_id, request.domain, request.exclude_domains
@@ -40,7 +43,12 @@ async def get_recommendation(
     cached = result.scalar_one_or_none()
 
     if cached:
-        return RecommendationResponse(**cached.result)
+        now = datetime.now(timezone.utc)
+        if cached.expires_at is None or cached.expires_at > now:
+            return RecommendationResponse(**cached.result)
+        # 만료된 캐시 제거 후 재요청
+        await db.delete(cached)
+        await db.flush()
 
     # 2. Gemini 호출
     ai_request = AIRecommendationRequest(
@@ -64,10 +72,11 @@ async def get_recommendation(
         recommendations=ai_response.recommendations, map_title=ai_response.map_title
     )
 
-    # 4. 캐시 저장
+    # 4. 캐시 저장 (24시간 TTL)
     cache = RecommendationCache(
         cache_key=cache_key,
         result=response.model_dump(mode="json"),
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=CACHE_TTL_HOURS),
     )
     db.add(cache)
     await db.commit()
