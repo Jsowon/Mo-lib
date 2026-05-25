@@ -18,7 +18,12 @@ class MusicSearchResponse(BaseModel):
     error: str | None = None
 
 
-@router.get("/music", response_model=MusicSearchResponse)
+@router.get(
+    "/music",
+    response_model=MusicSearchResponse,
+    summary="음악 검색",
+    description="Spotify에서 음악을 검색합니다. API 장애 시 빈 결과와 error 메시지를 반환합니다.",
+)
 async def search_music(
     q: str = Query(..., min_length=1, description="검색어"),
     limit: int = Query(

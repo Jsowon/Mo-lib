@@ -18,7 +18,12 @@ class MovieSearchResponse(BaseModel):
     error: str | None = None
 
 
-@router.get("/movie", response_model=MovieSearchResponse)
+@router.get(
+    "/movie",
+    response_model=MovieSearchResponse,
+    summary="영화 검색",
+    description="TMDB에서 영화를 검색합니다. API 장애 시 빈 결과와 error 메시지를 반환합니다.",
+)
 async def search_movie(
     q: str = Query(..., min_length=1, description="영화 검색어"),
     limit: int = Query(10, ge=1, le=20, description="결과 수"),

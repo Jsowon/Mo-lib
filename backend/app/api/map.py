@@ -107,9 +107,14 @@ class MapDetailResponse(BaseModel):
 # ─────────────────────────────────────────
 
 
-@router.post("", response_model=MapResponse)
+@router.post(
+    "",
+    response_model=MapResponse,
+    status_code=201,
+    summary="지도 생성",
+    description="새 몰입 지도를 생성합니다. title 미입력 시 오늘 날짜로 자동 설정됩니다.",
+)
 async def create_map(request: MapCreateRequest, db: AsyncSession = Depends(get_db)):
-    """새 지도 생성"""
     map_title = request.title or (
         f"나의 탐색 {datetime.now(timezone.utc).strftime('%Y.%m.%d')}"
     )
@@ -129,9 +134,13 @@ async def create_map(request: MapCreateRequest, db: AsyncSession = Depends(get_d
     )
 
 
-@router.get("", response_model=list[MapResponse])
+@router.get(
+    "",
+    response_model=list[MapResponse],
+    summary="지도 목록 조회",
+    description="내 지도 전체 목록을 최근 수정순으로 반환합니다.",
+)
 async def get_maps(db: AsyncSession = Depends(get_db)):
-    """내 지도 목록 전체 조회"""
     result = await db.execute(select(Map).order_by(Map.updated_at.desc()))
     maps = result.scalars().all()
 
@@ -146,9 +155,13 @@ async def get_maps(db: AsyncSession = Depends(get_db)):
     ]
 
 
-@router.get("/{map_id}", response_model=MapDetailResponse)
+@router.get(
+    "/{map_id}",
+    response_model=MapDetailResponse,
+    summary="지도 상세 조회",
+    description="특정 지도의 노드와 엣지를 포함한 전체 정보를 반환합니다.",
+)
 async def get_map(map_id: str, db: AsyncSession = Depends(get_db)):
-    """특정 지도 상세 조회 (노드 + 엣지 포함)"""
     result = await db.execute(select(Map).where(Map.id == uuid.UUID(map_id)))
     map_obj = result.scalar_one_or_none()
 
@@ -198,7 +211,11 @@ async def get_map(map_id: str, db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.patch("/{map_id}", response_model=MapResponse)
+@router.patch(
+    "/{map_id}",
+    response_model=MapResponse,
+    summary="지도 제목 수정",
+)
 async def update_map_title(
     map_id: str, request: MapTitleUpdateRequest, db: AsyncSession = Depends(get_db)
 ):
@@ -222,7 +239,11 @@ async def update_map_title(
     )
 
 
-@router.post("/{map_id}/continue")
+@router.post(
+    "/{map_id}/continue",
+    summary="지도 이어서 탐색",
+    description="기존 지도의 마지막 노드를 기준으로 새로운 추천을 요청합니다.",
+)
 async def continue_map(
     map_id: str, request: RecommendationRequest, db: AsyncSession = Depends(get_db)
 ):
@@ -272,7 +293,13 @@ async def continue_map(
 # ─────────────────────────────────────────
 
 
-@router.post("/{map_id}/nodes", response_model=NodeResponse)
+@router.post(
+    "/{map_id}/nodes",
+    response_model=NodeResponse,
+    status_code=201,
+    summary="노드 저장",
+    description="추천 콘텐츠를 지도에 노드로 저장합니다.",
+)
 async def save_node(
     map_id: str, request: NodeSaveRequest, db: AsyncSession = Depends(get_db)
 ):
@@ -307,7 +334,13 @@ async def save_node(
     )
 
 
-@router.post("/{map_id}/edges", response_model=EdgeResponse)
+@router.post(
+    "/{map_id}/edges",
+    response_model=EdgeResponse,
+    status_code=201,
+    summary="엣지 저장",
+    description="두 노드 사이의 연결(엣지)을 저장합니다.",
+)
 async def save_edge(
     map_id: str, request: EdgeSaveRequest, db: AsyncSession = Depends(get_db)
 ):
