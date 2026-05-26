@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     SPOTIFY_CLIENT_ID: str
     SPOTIFY_CLIENT_SECRET: SecretStr
     ALADIN_TTB_KEY: SecretStr
+    GEMINI_API_KEY: SecretStr
 
     class Config:
         env_file = ".env"
