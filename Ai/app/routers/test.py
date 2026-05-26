@@ -144,6 +144,101 @@ async def test_recommend(domain: str, exclude: str = ""):
             raise HTTPException(status_code=429, detail="API 할당량 초과. 잠시 후 다시 시도해주세요.")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/test/history/two-step")
+async def test_two_step_history():
+    start = time.time()
+    try:
+        # 1단계: 영화 분석
+        step1_analysis = await run_stage1("film", SAMPLES["film"])
+        if "error" in step1_analysis:
+            raise HTTPException(status_code=500, detail="Step 1 Stage1 파싱 실패")
+
+        history = [
+            {"domain": "film", "title": SAMPLES["film"]["title"], "analysis": step1_analysis}
+        ]
+
+        # 2단계: 도서 분석 + 1단계 히스토리 반영
+        step2_analysis = await run_stage1("book", SAMPLES["book"])
+        if "error" in step2_analysis:
+            raise HTTPException(status_code=500, detail="Step 2 Stage1 파싱 실패")
+
+        result = await run_stage2(
+            analysis=step2_analysis,
+            history=history,
+            exclude_domains=["book"],
+            exclude_title=SAMPLES["book"]["title"],
+        )
+
+        return {
+            "latency_sec": round(time.time() - start, 3),
+            "elapsed_ms": {
+                "stage1_step1": step1_analysis.get("elapsed_ms"),
+                "stage1_step2": step2_analysis.get("elapsed_ms"),
+                "stage2": result.get("elapsed_ms"),
+            },
+            "history_length": len(history),
+            "step1_analysis": step1_analysis,
+            "step2_analysis": step2_analysis,
+            "recommendations": result.get("recommendations", {}),
+            "map_title": result.get("map_title"),
+            "grounding_used": result.get("grounding_used"),
+        }
+    except errors.ClientError as e:
+        code = getattr(e, "status_code", None) or getattr(e, "code", None)
+        if code == 429:
+            raise HTTPException(status_code=429, detail="API 할당량 초과. 잠시 후 다시 시도해주세요.")
+        raise HTTPException(status_code=500, detail=str(e))
+        
+@router.get("/test/history/three-step")
+async def test_three_step_history():
+    start = time.time()
+    try:
+        # 1단계: 영화
+        step1_analysis = await run_stage1("film", SAMPLES["film"])
+        if "error" in step1_analysis:
+            raise HTTPException(status_code=500, detail="Step 1 Stage1 파싱 실패")
+
+        # 2단계: 도서
+        step2_analysis = await run_stage1("book", SAMPLES["book"])
+        if "error" in step2_analysis:
+            raise HTTPException(status_code=500, detail="Step 2 Stage1 파싱 실패")
+
+        history = [
+            {"domain": "film", "title": SAMPLES["film"]["title"], "analysis": step1_analysis},
+            {"domain": "book", "title": SAMPLES["book"]["title"], "analysis": step2_analysis},
+        ]
+
+        # 3단계: 음악 + 누적 히스토리 반영
+        step3_analysis = await run_stage1("music", SAMPLES["music"])
+        if "error" in step3_analysis:
+            raise HTTPException(status_code=500, detail="Step 3 Stage1 파싱 실패")
+
+        result = await run_stage2(
+            analysis=step3_analysis,
+            history=history,
+            exclude_domains=["music"],
+            exclude_title=SAMPLES["music"]["title"],
+        )
+
+        return {
+            "latency_sec": round(time.time() - start, 3),
+            "elapsed_ms": {
+                "stage1_step1": step1_analysis.get("elapsed_ms"),
+                "stage1_step2": step2_analysis.get("elapsed_ms"),
+                "stage2": result.get("elapsed_ms"),
+            },
+            "history_length": len(history),
+            "step1_analysis": step1_analysis,
+            "step2_analysis": step2_analysis,
+            "recommendations": result.get("recommendations", {}),
+            "map_title": result.get("map_title"),
+            "grounding_used": result.get("grounding_used"),
+        }
+    except errors.ClientError as e:
+        code = getattr(e, "status_code", None) or getattr(e, "code", None)
+        if code == 429:
+            raise HTTPException(status_code=429, detail="API 할당량 초과. 잠시 후 다시 시도해주세요.")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/test-grounding")
 async def test_grounding(title: str = "2026년 개봉 예정인 한국 영화"):
