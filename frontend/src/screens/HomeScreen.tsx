@@ -10,7 +10,12 @@ import {
   FlatList,
   Dimensions,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { HomeStackParamList } from "../navigation/types";
 import Header from "../components/common/Header";
+
+type NavProp = NativeStackNavigationProp<HomeStackParamList, "HomeMain">;
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.65;
@@ -42,6 +47,7 @@ type Stats = {
 };
 
 export default function HomeScreen() {
+  const navigation = useNavigation<NavProp>();
   const [selectedDomain, setSelectedDomain] = useState<Domain>("movie");
   const [searchText, setSearchText] = useState("");
   // TODO: API 연동 후 실제 값으로 교체 (GET /api/users/me/stats)
@@ -84,6 +90,14 @@ export default function HomeScreen() {
             value={searchText}
             onChangeText={setSearchText}
             returnKeyType="search"
+            onSubmitEditing={() => {
+              if (searchText.trim()) {
+                navigation.navigate("SearchResult", {
+                  domain: selectedDomain,
+                  query: searchText.trim(),
+                });
+              }
+            }}
           />
         </View>
 

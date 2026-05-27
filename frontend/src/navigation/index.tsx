@@ -8,7 +8,7 @@ import { useAuthStore } from "../store/authStore";
 import OnboardingScreen from "../screens/OnboardingScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
-import HomeScreen from "../screens/HomeScreen";
+import HomeStack from "./HomeStack";
 import MapScreen from "../screens/MapScreen";
 import ArchiveScreen from "../screens/ArchiveScreen";
 
@@ -50,7 +50,7 @@ function MainTab() {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={HomeStack}
         options={{
           title: "홈",
           tabBarIcon: ({ size, focused }) => (

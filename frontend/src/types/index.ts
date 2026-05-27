@@ -71,3 +71,36 @@ export interface RecommendationResponse {
   cached: boolean;
   recommendations: RecommendationItem[];
 }
+
+// Content Search (검색 결과)
+export interface ContentItemMetadata {
+  // 영화
+  director?: string;
+  original_title?: string;
+  rating?: number;
+  genres?: string[];
+  // 책
+  author?: string;
+  publisher?: string;
+  // 음악
+  artist?: string;
+  album?: string;
+}
+
+export interface ContentItem {
+  external_id: string;
+  domain: Domain;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  year: number | null;
+  country: string | null;
+  metadata: ContentItemMetadata;
+}
+
+export interface ContentSearchResponse {
+  items: ContentItem[];
+  total: number;
+  page: number;
+  size: number;
+}
