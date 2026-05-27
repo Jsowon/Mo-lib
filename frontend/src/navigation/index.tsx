@@ -2,7 +2,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useEffect } from "react";
-import { Image } from "react-native";
+import { Image, View } from "react-native";
 
 import { useAuthStore } from "../store/authStore";
 import OnboardingScreen from "../screens/OnboardingScreen";
@@ -27,18 +27,53 @@ function AuthNavigator() {
 
 function MainTab() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: "#1E293B",
+          borderTopColor: "#1E293B",
+          height: 72,
+          paddingBottom: 10,
+          paddingTop: 8,
+        },
+        tabBarActiveTintColor: "#D97BA0",
+        tabBarInactiveTintColor: "#6B7280",
+        tabBarLabelStyle: {
+          marginTop: 6,
+          fontSize: 12,
+        },
+        tabBarIconStyle: {
+          marginBottom: 0,
+        },
+      }}
+    >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
           title: "홈",
-          tabBarIcon: ({ size }) => (
-            <Image
-              source={require("../../assets/icon-home.png")}
-              style={{ width: size, height: size }}
-              resizeMode="contain"
-            />
+          tabBarIcon: ({ size, focused }) => (
+            <View
+              style={{
+                width: size + 20,
+                height: size + 20,
+                borderRadius: (size + 20) / 2,
+                backgroundColor: focused ? "#2A1F3D" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Image
+                source={
+                  focused
+                    ? require("../../assets/icon-home(choice).png")
+                    : require("../../assets/icon-home.png")
+                }
+                style={{ width: size, height: size }}
+                resizeMode="contain"
+              />
+            </View>
           ),
         }}
       />
@@ -47,12 +82,27 @@ function MainTab() {
         component={MapScreen}
         options={{
           title: "여정",
-          tabBarIcon: ({ size }) => (
-            <Image
-              source={require("../../assets/icon-journey.png")}
-              style={{ width: size, height: size }}
-              resizeMode="contain"
-            />
+          tabBarIcon: ({ size, focused }) => (
+            <View
+              style={{
+                width: size + 20,
+                height: size + 20,
+                borderRadius: (size + 20) / 2,
+                backgroundColor: focused ? "#2A1F3D" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Image
+                source={
+                  focused
+                    ? require("../../assets/icon-journey(choice).png")
+                    : require("../../assets/icon-journey.png")
+                }
+                style={{ width: size, height: size }}
+                resizeMode="contain"
+              />
+            </View>
           ),
         }}
       />
@@ -61,12 +111,27 @@ function MainTab() {
         component={ArchiveScreen}
         options={{
           title: "아카이브",
-          tabBarIcon: ({ size }) => (
-            <Image
-              source={require("../../assets/icon-archive.png")}
-              style={{ width: size, height: size }}
-              resizeMode="contain"
-            />
+          tabBarIcon: ({ size, focused }) => (
+            <View
+              style={{
+                width: size + 20,
+                height: size + 20,
+                borderRadius: (size + 20) / 2,
+                backgroundColor: focused ? "#2A1F3D" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Image
+                source={
+                  focused
+                    ? require("../../assets/icon-archive(choice).png")
+                    : require("../../assets/icon-archive.png")
+                }
+                style={{ width: size, height: size }}
+                resizeMode="contain"
+              />
+            </View>
           ),
         }}
       />

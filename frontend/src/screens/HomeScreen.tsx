@@ -166,7 +166,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0D0B1E",
+    backgroundColor: "#0A0E1A",
   },
   scroll: {
     flex: 1,
