@@ -47,7 +47,7 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       const res = await authAPI.login({ email, password });
-      await setAuth(res.data.access_token, res.data.nickname);
+      await setAuth(res.data.access_token, res.data.nickname, email);
     } catch (err: any) {
       const status = err.response?.status;
       if (status === 401) {
@@ -55,6 +55,8 @@ export default function LoginScreen() {
       } else {
         Alert.alert("오류", "로그인 중 오류가 발생했습니다.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -4,6 +4,7 @@ import {
   Node,
   Edge,
   RecommendationResponse,
+  ContentSearchResponse,
 } from '../types';
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -72,5 +73,5 @@ export const archiveAPI = {
 // ── Content Search ────────────────────────────────────────────────────────────
 export const contentAPI = {
   search: (params: { domain: string; q: string; page?: number; size?: number }) =>
-    apiClient.get('/content/search', { params }),
+    apiClient.get<ContentSearchResponse>('/content/search', { params }),
 };
