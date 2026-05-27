@@ -12,8 +12,10 @@ import HomeStack from "./HomeStack";
 import MapScreen from "../screens/MapScreen";
 import ArchiveScreen from "../screens/ArchiveScreen";
 
+import { RootTabParamList } from "./types";
+
 const AuthStack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<RootTabParamList>();
 
 function AuthNavigator() {
   return (

@@ -10,3 +10,9 @@ export type HomeStackParamList = {
     item: ContentItem;
   };
 };
+
+export type RootTabParamList = {
+  Home: undefined;
+  Map: { mapId?: string } | undefined;
+  Archive: undefined;
+};

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,13 +9,19 @@ import {
   Image,
   FlatList,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { HomeStackParamList } from "../navigation/types";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { HomeStackParamList, RootTabParamList } from "../navigation/types";
+import { Map as MapItem } from "../types";
+import { mapsAPI } from "../api/endpoints";
 import Header from "../components/common/Header";
 
 type NavProp = NativeStackNavigationProp<HomeStackParamList, "HomeMain">;
+type TabNavProp = BottomTabNavigationProp<RootTabParamList>;
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.65;
@@ -34,30 +40,57 @@ const PLACEHOLDER: Record<Domain, string> = {
   music: "음악 검색하기",
 };
 
-type RecentMap = {
-  id: string;
-  title: string;
-  thumbnailUrl: string | null; // TODO: 백엔드 Map 모델에 thumbnail_url 필드 추가 필요
-};
-
 type Stats = {
-  totalArchived: number; // 총 아카이빙 수
-  totalMaps: number; // 과몰입 지도 수
-  weeklyNodes: number; // 이번 주 선택한 노드 수
+  totalArchived: number;
+  totalMaps: number;
+  weeklyNodes: number;
 };
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavProp>();
+  const tabNavigation = useNavigation<TabNavProp>();
+
   const [selectedDomain, setSelectedDomain] = useState<Domain>("movie");
   const [searchText, setSearchText] = useState("");
+
   // TODO: API 연동 후 실제 값으로 교체 (GET /api/users/me/stats)
-  const [stats, setStats] = useState<Stats>({
+  const [stats] = useState<Stats>({
     totalArchived: 0,
     totalMaps: 0,
     weeklyNodes: 0,
   });
-  // TODO: API 연동 후 실제 값으로 교체 (GET /api/maps?limit=10&sort=recent)
-  const [recentMaps, setRecentMaps] = useState<RecentMap[]>([]);
+
+  // 최근 지도 (GET /maps — updated_at DESC 상위 3개)
+  const [recentMaps, setRecentMaps] = useState<MapItem[]>([]);
+  const [mapsLoading, setMapsLoading] = useState(false);
+  const [mapsError, setMapsError] = useState(false);
+
+  const fetchRecentMaps = useCallback(async () => {
+    setMapsLoading(true);
+    setMapsError(false);
+    try {
+      const res = await mapsAPI.getList();
+      const sorted = [...res.data.maps]
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+        .slice(0, 3);
+      setRecentMaps(sorted);
+    } catch {
+      setMapsError(true);
+    } finally {
+      setMapsLoading(false);
+    }
+  }, []);
+
+  // 화면 포커스될 때마다 최신 데이터 로드
+  useFocusEffect(
+    useCallback(() => {
+      fetchRecentMaps();
+    }, [fetchRecentMaps])
+  );
+
+  const handleMapCardPress = (mapId: string) => {
+    tabNavigation.navigate("Map", { mapId });
+  };
 
   return (
     <View style={styles.container}>
@@ -144,34 +177,53 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>최근에 아카이빙한 지도</Text>
         </View>
-        <FlatList
-          data={recentMaps}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.mapsListContent}
-          ListEmptyComponent={
-            <View style={styles.mapCardEmpty}>
-              <Text style={styles.mapCardEmptyText}>아직 지도가 없어요</Text>
-            </View>
-          }
-          renderItem={({ item, index }) => (
-            <TouchableOpacity
-              style={[styles.mapCard, index === 0 && styles.mapCardLarge]}
-            >
-              {item.thumbnailUrl ? (
-                <Image
-                  source={{ uri: item.thumbnailUrl }}
-                  style={styles.mapCardImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={styles.mapCardImageFallback} />
-              )}
-              <Text style={styles.mapCardTitle}>{item.title}</Text>
-            </TouchableOpacity>
-          )}
-        />
+
+        {mapsLoading ? (
+          <View style={styles.mapsLoadingContainer}>
+            <ActivityIndicator size="small" color="#C084A0" />
+          </View>
+        ) : (
+          <FlatList
+            data={recentMaps}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.mapsListContent}
+            ListEmptyComponent={
+              <View style={styles.mapCardEmpty}>
+                <Text style={styles.mapCardEmptyText}>
+                  {mapsError ? "불러오기 실패" : "아직 지도가 없어요"}
+                </Text>
+              </View>
+            }
+            renderItem={({ item, index }) => (
+              <TouchableOpacity
+                style={[styles.mapCard, index === 0 && styles.mapCardLarge]}
+                onPress={() => handleMapCardPress(item.id)}
+              >
+                {item.last_node?.image_url ? (
+                  <Image
+                    source={{ uri: item.last_node.image_url }}
+                    style={styles.mapCardImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.mapCardImageFallback} />
+                )}
+                <View style={styles.mapCardOverlay}>
+                  <Text style={styles.mapCardTitle} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  {item.last_node && (
+                    <Text style={styles.mapCardSubtitle} numberOfLines={1}>
+                      {item.last_node.title}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        )}
       </ScrollView>
     </View>
   );
@@ -283,6 +335,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
   },
+  mapsLoadingContainer: {
+    height: 180,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
   mapsListContent: {
     paddingHorizontal: 20,
     gap: 12,
@@ -311,14 +369,21 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#1A1830",
+    backgroundColor: "#252540",
+  },
+  mapCardOverlay: {
+    padding: 12,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    gap: 2,
   },
   mapCardTitle: {
     fontSize: 14,
     fontWeight: "600",
     color: "#FFFFFF",
-    padding: 16,
-    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  mapCardSubtitle: {
+    fontSize: 11,
+    color: "#AAAACC",
   },
   mapCardEmpty: {
     width: CARD_WIDTH,
