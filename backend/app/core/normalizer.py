@@ -4,10 +4,25 @@ from pydantic import BaseModel
 
 # TMDB genre_id → 장르명 (영화)
 _TMDB_GENRE_MAP: dict[int, str] = {
-    28: "액션", 12: "어드벤처", 16: "애니메이션", 35: "코미디", 80: "범죄",
-    99: "다큐멘터리", 18: "드라마", 10751: "가족", 14: "판타지", 36: "역사",
-    27: "공포", 10402: "음악", 9648: "미스터리", 10749: "로맨스", 878: "SF",
-    10770: "TV영화", 53: "스릴러", 10752: "전쟁", 37: "서부",
+    28: "액션",
+    12: "어드벤처",
+    16: "애니메이션",
+    35: "코미디",
+    80: "범죄",
+    99: "다큐멘터리",
+    18: "드라마",
+    10751: "가족",
+    14: "판타지",
+    36: "역사",
+    27: "공포",
+    10402: "음악",
+    9648: "미스터리",
+    10749: "로맨스",
+    878: "SF",
+    10770: "TV영화",
+    53: "스릴러",
+    10752: "전쟁",
+    37: "서부",
 }
 
 
@@ -42,42 +57,6 @@ def normalize_spotify_track(item: dict) -> ContentItem:
     )
 
 
-def normalize_tmdb_movie(movie: dict) -> ContentItem:
-    """TMDB Movie 객체 → ContentItem"""
-    poster_path = movie.get("poster_path")
-    # 포스터가 있으면 전체 주소를 리스트에 넣고, 없으면 빈 리스트를 반환합니다.
-    thumbnail_list = (
-        [f"https://image.tmdb.org/t/p/w500{poster_path}"] if poster_path else []
-    )
-
-    return ContentItem(
-        domain="movie",
-        title=movie.get("title", ""),
-        description=movie.get("overview", ""),
-        genre=[],  # 장르 매핑은 추후 구현
-        creator="Director",  # 검색 결과엔 감독이 없으므로 기본값 설정
-        keywords=[],
-        thumbnail_url=thumbnail_list,
-    )
-
-
-def normalize_aladin_book(book: dict) -> ContentItem:
-    """알라딘 Book 객체 → ContentItem"""
-    cover_url = book.get("cover")
-    # 커버 이미지가 있으면 리스트에 담습니다.
-    thumbnail_list = [cover_url] if cover_url else []
-
-    return ContentItem(
-        domain="book",
-        title=book.get("title", ""),
-        description=book.get("description", ""),
-        genre=book.get("categoryName", "").split(">"),
-        creator=book.get("author", ""),
-        keywords=[],
-        thumbnail_url=thumbnail_list,
-    )
-
-
 def normalize_aladin_book(item: dict) -> ContentItem:
     """알라딘 ItemSearch API item 객체 → ContentItem.
 
@@ -88,7 +67,11 @@ def normalize_aladin_book(item: dict) -> ContentItem:
     creator = re.sub(r"\s*\([^)]*\)", "", raw_author).strip().rstrip(",").strip()
 
     raw_category = item.get("categoryName", "")
-    genre = [g.strip() for g in raw_category.split(">") if g.strip()] if raw_category else []
+    genre = (
+        [g.strip() for g in raw_category.split(">") if g.strip()]
+        if raw_category
+        else []
+    )
 
     return ContentItem(
         domain="book",
