@@ -25,7 +25,7 @@ services:
     ports:
       # 로컬 개발용: 127.0.0.1에만 바인딩 (외부 인터넷 차단)
       # 프로덕션 EC2 배포 시 이 ports 블록 전체 제거할 것
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - molib_pgdata:/var/lib/postgresql/data
     healthcheck:
