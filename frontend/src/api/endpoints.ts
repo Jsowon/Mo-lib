@@ -1,19 +1,25 @@
-import { apiClient } from './client';
+import { apiClient, searchClient } from './client';
 import {
   Map,
   Node,
   Edge,
+  RecommendationRequest,
   RecommendationResponse,
-  ContentSearchResponse,
+  SearchResponse,
+  CreateNodeRequest,
+  EdgeSaveRequest,
 } from '../types';
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const authAPI = {
   register: (data: { email: string; password: string; nickname: string }) =>
-    apiClient.post<{ message: string; user_id: string }>('/auth/register', data),
+    apiClient.post<{ access_token: string; token_type: string }>('/auth/signup', data),
 
   login: (data: { email: string; password: string }) =>
-    apiClient.post<{ access_token: string; token_type: string; nickname: string }>('/auth/login', data),
+    apiClient.post<{ access_token: string; token_type: string }>('/auth/login', data),
+
+  me: () =>
+    apiClient.get<{ id: string; email: string; nickname: string }>('/auth/me'),
 
   logout: () =>
     apiClient.post<{ message: string }>('/auth/logout'),
@@ -21,11 +27,12 @@ export const authAPI = {
 
 // ── Maps ──────────────────────────────────────────────────────────────────────
 export const mapsAPI = {
-  getList: () =>
-    apiClient.get<{ maps: Map[] }>('/maps'),
+  getList: async () => {
+    const res = await apiClient.get<Map[]>('/maps');
+    return { ...res, data: { maps: res.data } };
+  },
 
-  create: (data: { title?: string }) =>
-    apiClient.post<Map>('/maps', data),
+  create: (data: { title?: string }) => apiClient.post<Map>('/maps', data),
 
   getDetail: (mapId: string) =>
     apiClient.get<{ id: string; title: string; nodes: Node[]; edges: Edge[] }>(`/maps/${mapId}`),
@@ -39,16 +46,7 @@ export const mapsAPI = {
 
 // ── Nodes ─────────────────────────────────────────────────────────────────────
 export const nodesAPI = {
-  add: (mapId: string, data: {
-    source_node_id: string | null;
-    domain: string;
-    external_id: string | null;
-    title: string;
-    description: string | null;
-    image_url: string | null;
-    emotion_tags: string[];
-    metadata: Record<string, unknown>;
-  }) =>
+  add: (mapId: string, data: CreateNodeRequest) =>
     apiClient.post<Node>(`/maps/${mapId}/nodes`, data),
 
   toggleArchive: (mapId: string, nodeId: string, is_archived: boolean) =>
@@ -58,10 +56,16 @@ export const nodesAPI = {
     ),
 };
 
+// ── Edges ─────────────────────────────────────────────────────────────────────
+export const edgesAPI = {
+  save: (mapId: string, data: EdgeSaveRequest) =>
+    apiClient.post<Edge>(`/maps/${mapId}/edges`, data),
+};
+
 // ── Recommendation ────────────────────────────────────────────────────────────
 export const recommendationAPI = {
-  get: (data: { node_id: string; title: string; domain: string }) =>
-    apiClient.post<RecommendationResponse>('/recommendation', data),
+  get: (data: RecommendationRequest) =>
+    apiClient.post<RecommendationResponse>('/recommendations', data),
 };
 
 // ── Archive ───────────────────────────────────────────────────────────────────
@@ -71,7 +75,13 @@ export const archiveAPI = {
 };
 
 // ── Content Search ────────────────────────────────────────────────────────────
-export const contentAPI = {
-  search: (params: { domain: string; q: string; page?: number; size?: number }) =>
-    apiClient.get<ContentSearchResponse>('/content/search', { params }),
+export const searchAPI = {
+  movie: (q: string, limit: number = 10) =>
+    searchClient.get<SearchResponse>('/search/movie', { params: { q, limit } }),
+
+  music: (q: string, limit: number = 10) =>
+    searchClient.get<SearchResponse>('/search/music', { params: { q, limit } }),
+
+  book: (q: string, limit: number = 10) =>
+    searchClient.get<SearchResponse>('/search/book', { params: { q, limit } }),
 };

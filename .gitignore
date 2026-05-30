@@ -208,3 +208,13 @@ __marimo__/
 
 # Claude Code
 .claude/
+
+# VSCode settings
+.vscode/
+
+# OpenAPI specification
+openapi.json
+
+# Build artifacts and environment examples
+.env.example
+build_log.txt
