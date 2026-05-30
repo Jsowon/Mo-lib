@@ -1,0 +1,7 @@
+{
+  "java.project.sourcePaths": [],
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/android/**"
+  ]
+}

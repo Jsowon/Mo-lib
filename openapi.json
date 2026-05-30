@@ -1,0 +1,1175 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Mo:lib",
+    "description": "몰입 지도 기반 크로스 도메인 콘텐츠 추천 API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/recommendations": {
+      "post": {
+        "tags": ["recommendation"],
+        "summary": "크로스 도메인 콘텐츠 추천",
+        "description": "콘텐츠 정보를 입력하면 Gemini AI가 영화·음악·도서를 추천합니다. 동일 요청은 24시간 캐시됩니다.",
+        "operationId": "get_recommendation_api_v1_recommendations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RecommendationRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maps": {
+      "get": {
+        "tags": ["map"],
+        "summary": "지도 목록 조회",
+        "description": "내 지도 전체 목록을 최근 수정순으로 반환합니다.",
+        "operationId": "get_maps_api_v1_maps_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": { "$ref": "#/components/schemas/MapResponse" },
+                  "type": "array",
+                  "title": "Response Get Maps Api V1 Maps Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["map"],
+        "summary": "지도 생성",
+        "description": "새 몰입 지도를 생성합니다. title 미입력 시 오늘 날짜로 자동 설정됩니다.",
+        "operationId": "create_map_api_v1_maps_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MapCreateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MapResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maps/{map_id}": {
+      "get": {
+        "tags": ["map"],
+        "summary": "지도 상세 조회",
+        "description": "특정 지도의 노드와 엣지를 포함한 전체 정보를 반환합니다.",
+        "operationId": "get_map_api_v1_maps__map_id__get",
+        "parameters": [
+          {
+            "name": "map_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Map Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MapDetailResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["map"],
+        "summary": "지도 제목 수정",
+        "description": "지도 이름 수정",
+        "operationId": "update_map_title_api_v1_maps__map_id__patch",
+        "parameters": [
+          {
+            "name": "map_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Map Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MapTitleUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MapResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maps/{map_id}/continue": {
+      "post": {
+        "tags": ["map"],
+        "summary": "지도 이어서 탐색",
+        "description": "기존 지도의 마지막 노드를 기준으로 새로운 추천을 요청합니다.",
+        "operationId": "continue_map_api_v1_maps__map_id__continue_post",
+        "parameters": [
+          {
+            "name": "map_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Map Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RecommendationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maps/{map_id}/nodes": {
+      "post": {
+        "tags": ["map"],
+        "summary": "노드 저장",
+        "description": "추천 콘텐츠를 지도에 노드로 저장합니다.",
+        "operationId": "save_node_api_v1_maps__map_id__nodes_post",
+        "parameters": [
+          {
+            "name": "map_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Map Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NodeSaveRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NodeResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maps/{map_id}/edges": {
+      "post": {
+        "tags": ["map"],
+        "summary": "엣지 저장",
+        "description": "두 노드 사이의 연결(엣지)을 저장합니다.",
+        "operationId": "save_edge_api_v1_maps__map_id__edges_post",
+        "parameters": [
+          {
+            "name": "map_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Map Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EdgeSaveRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EdgeResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/signup": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "회원가입",
+        "operationId": "signup_api_v1_auth_signup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SignupRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TokenResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "로그인",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TokenResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "로그아웃",
+        "description": "프론트에서 토큰 삭제. 서버는 200만 반환.",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": ["auth"],
+        "summary": "내 정보 조회",
+        "operationId": "get_me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/api/v1/archive": {
+      "get": {
+        "tags": ["archive"],
+        "summary": "아카이브 목록 조회",
+        "description": "아카이브에 저장된 노드 목록을 반환합니다. step_order 오름차순 정렬.",
+        "operationId": "get_archive_api_v1_archive_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ArchiveNodeResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Get Archive Api V1 Archive Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/archive/{node_id}": {
+      "delete": {
+        "tags": ["archive"],
+        "summary": "아카이브에서 제거",
+        "description": "노드를 아카이브에서 제거합니다 (is_archived=False). 노드 자체는 삭제되지 않습니다.",
+        "operationId": "remove_from_archive_api_v1_archive__node_id__delete",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Node Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["archive"],
+        "summary": "아카이브에 추가",
+        "description": "노드를 아카이브에 추가합니다 (is_archived=True).",
+        "operationId": "add_to_archive_api_v1_archive__node_id__post",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Node Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ArchiveNodeResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/music": {
+      "get": {
+        "tags": ["search"],
+        "summary": "음악 검색",
+        "description": "Spotify에서 음악을 검색합니다. API 장애 시 빈 결과와 error 메시지를 반환합니다.",
+        "operationId": "search_music_search_music_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "검색어",
+              "title": "Q"
+            },
+            "description": "검색어"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10,
+              "minimum": 1,
+              "description": "결과 수 (최대 10, Spotify 개발자 앱 제한)",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "결과 수 (최대 10, Spotify 개발자 앱 제한)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MusicSearchResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search/book": {
+      "get": {
+        "tags": ["search"],
+        "summary": "도서 검색",
+        "description": "알라딘에서 도서를 검색합니다. API 장애 시 빈 결과와 error 메시지를 반환합니다.",
+        "operationId": "search_book_search_book_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "도서 검색어",
+              "title": "Q"
+            },
+            "description": "도서 검색어"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "minimum": 1,
+              "description": "결과 수",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "결과 수"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BookSearchResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/stats": {
+      "get": {
+        "tags": ["users"],
+        "summary": "내 홈 통계 조회",
+        "description": "홈 화면에 표시할 사용자 통계를 반환합니다.",
+        "operationId": "get_my_stats_api_v1_users_me_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserStatsResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/search/movie": {
+      "get": {
+        "tags": ["search"],
+        "summary": "영화 검색",
+        "description": "TMDB에서 영화를 검색합니다. API 장애 시 빈 결과와 error 메시지를 반환합니다.",
+        "operationId": "search_movie_search_movie_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "영화 검색어",
+              "title": "Q"
+            },
+            "description": "영화 검색어"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "minimum": 1,
+              "description": "결과 수",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "결과 수"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MovieSearchResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Health Check",
+        "description": "서버 상태 확인",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AIRecommendationItem": {
+        "properties": {
+          "title": { "type": "string", "title": "Title" },
+          "reason": { "type": "string", "title": "Reason" },
+          "tags": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Tags"
+          },
+          "connection_keyword": {
+            "type": "string",
+            "title": "Connection Keyword"
+          }
+        },
+        "type": "object",
+        "required": ["title", "reason", "tags", "connection_keyword"],
+        "title": "AIRecommendationItem"
+      },
+      "ArchiveNodeResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "map_id": { "type": "string", "title": "Map Id" },
+          "domain": { "type": "string", "title": "Domain" },
+          "external_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "External Id"
+          },
+          "title": { "type": "string", "title": "Title" },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description"
+          },
+          "image_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Image Url"
+          },
+          "emotion_tags": {
+            "anyOf": [
+              { "items": { "type": "string" }, "type": "array" },
+              { "type": "null" }
+            ],
+            "title": "Emotion Tags"
+          },
+          "is_root": { "type": "boolean", "title": "Is Root" },
+          "step_order": { "type": "integer", "title": "Step Order" },
+          "is_archived": { "type": "boolean", "title": "Is Archived" }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "map_id",
+          "domain",
+          "external_id",
+          "title",
+          "description",
+          "image_url",
+          "emotion_tags",
+          "is_root",
+          "step_order",
+          "is_archived"
+        ],
+        "title": "ArchiveNodeResponse"
+      },
+      "BookSearchResponse": {
+        "properties": {
+          "results": {
+            "items": { "$ref": "#/components/schemas/ContentItem" },
+            "type": "array",
+            "title": "Results"
+          },
+          "total": { "type": "integer", "title": "Total" },
+          "error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": ["results", "total"],
+        "title": "BookSearchResponse"
+      },
+      "ContentItem": {
+        "properties": {
+          "domain": { "type": "string", "title": "Domain" },
+          "title": { "type": "string", "title": "Title" },
+          "description": { "type": "string", "title": "Description" },
+          "genre": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Genre"
+          },
+          "creator": { "type": "string", "title": "Creator" },
+          "keywords": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Keywords"
+          },
+          "thumbnail_url": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Thumbnail Url",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "domain",
+          "title",
+          "description",
+          "genre",
+          "creator",
+          "keywords"
+        ],
+        "title": "ContentItem"
+      },
+      "EdgeResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "map_id": { "type": "string", "title": "Map Id" },
+          "source_node_id": { "type": "string", "title": "Source Node Id" },
+          "target_node_id": { "type": "string", "title": "Target Node Id" },
+          "reason": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "map_id",
+          "source_node_id",
+          "target_node_id",
+          "reason"
+        ],
+        "title": "EdgeResponse"
+      },
+      "EdgeSaveRequest": {
+        "properties": {
+          "source_node_id": { "type": "string", "title": "Source Node Id" },
+          "target_node_id": { "type": "string", "title": "Target Node Id" },
+          "reason": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": ["source_node_id", "target_node_id"],
+        "title": "EdgeSaveRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": { "$ref": "#/components/schemas/ValidationError" },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HistoryItem": {
+        "properties": {
+          "step": { "type": "integer", "title": "Step" },
+          "domain": { "type": "string", "title": "Domain" },
+          "title": { "type": "string", "title": "Title" },
+          "context_keywords": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Context Keywords"
+          },
+          "connection_keyword": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Connection Keyword"
+          }
+        },
+        "type": "object",
+        "required": ["step", "domain", "title", "context_keywords"],
+        "title": "HistoryItem"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": { "type": "string", "format": "email", "title": "Email" },
+          "password": { "type": "string", "title": "Password" }
+        },
+        "type": "object",
+        "required": ["email", "password"],
+        "title": "LoginRequest"
+      },
+      "MapCreateRequest": {
+        "properties": {
+          "title": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "title": "MapCreateRequest"
+      },
+      "MapDetailResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "title": { "type": "string", "title": "Title" },
+          "nodes": {
+            "items": { "$ref": "#/components/schemas/NodeResponse" },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": { "$ref": "#/components/schemas/EdgeResponse" },
+            "type": "array",
+            "title": "Edges"
+          },
+          "created_at": { "type": "string", "title": "Created At" },
+          "updated_at": { "type": "string", "title": "Updated At" }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "nodes",
+          "edges",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MapDetailResponse"
+      },
+      "MapResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "title": { "type": "string", "title": "Title" },
+          "created_at": { "type": "string", "title": "Created At" },
+          "updated_at": { "type": "string", "title": "Updated At" }
+        },
+        "type": "object",
+        "required": ["id", "title", "created_at", "updated_at"],
+        "title": "MapResponse"
+      },
+      "MapTitleUpdateRequest": {
+        "properties": { "title": { "type": "string", "title": "Title" } },
+        "type": "object",
+        "required": ["title"],
+        "title": "MapTitleUpdateRequest"
+      },
+      "MessageResponse": {
+        "properties": { "message": { "type": "string", "title": "Message" } },
+        "type": "object",
+        "required": ["message"],
+        "title": "MessageResponse"
+      },
+      "MovieSearchResponse": {
+        "properties": {
+          "results": {
+            "items": { "$ref": "#/components/schemas/ContentItem" },
+            "type": "array",
+            "title": "Results"
+          },
+          "total": { "type": "integer", "title": "Total" },
+          "error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": ["results", "total"],
+        "title": "MovieSearchResponse"
+      },
+      "MusicSearchResponse": {
+        "properties": {
+          "results": {
+            "items": { "$ref": "#/components/schemas/ContentItem" },
+            "type": "array",
+            "title": "Results"
+          },
+          "total": { "type": "integer", "title": "Total" },
+          "error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": ["results", "total"],
+        "title": "MusicSearchResponse"
+      },
+      "NodeResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "map_id": { "type": "string", "title": "Map Id" },
+          "domain": { "type": "string", "title": "Domain" },
+          "external_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "External Id"
+          },
+          "title": { "type": "string", "title": "Title" },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description"
+          },
+          "image_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Image Url"
+          },
+          "emotion_tags": {
+            "anyOf": [
+              { "items": { "type": "string" }, "type": "array" },
+              { "type": "null" }
+            ],
+            "title": "Emotion Tags"
+          },
+          "is_root": { "type": "boolean", "title": "Is Root" },
+          "step_order": { "type": "integer", "title": "Step Order" }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "map_id",
+          "domain",
+          "external_id",
+          "title",
+          "description",
+          "image_url",
+          "emotion_tags",
+          "is_root",
+          "step_order"
+        ],
+        "title": "NodeResponse"
+      },
+      "NodeSaveRequest": {
+        "properties": {
+          "domain": { "type": "string", "title": "Domain" },
+          "external_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "External Id"
+          },
+          "title": { "type": "string", "title": "Title" },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description"
+          },
+          "image_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Image Url"
+          },
+          "emotion_tags": {
+            "anyOf": [
+              { "items": { "type": "string" }, "type": "array" },
+              { "type": "null" }
+            ],
+            "title": "Emotion Tags"
+          },
+          "is_root": {
+            "type": "boolean",
+            "title": "Is Root",
+            "default": false
+          },
+          "step_order": { "type": "integer", "title": "Step Order" },
+          "metadata": {
+            "anyOf": [
+              { "additionalProperties": true, "type": "object" },
+              { "type": "null" }
+            ],
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": ["domain", "title", "step_order"],
+        "title": "NodeSaveRequest"
+      },
+      "RecommendationRequest": {
+        "properties": {
+          "domain": { "type": "string", "title": "Domain" },
+          "content_id": { "type": "string", "title": "Content Id" },
+          "title": { "type": "string", "title": "Title" },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          },
+          "history": {
+            "items": { "$ref": "#/components/schemas/HistoryItem" },
+            "type": "array",
+            "title": "History",
+            "default": []
+          },
+          "exclude_domains": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Exclude Domains",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": ["domain", "content_id", "title", "metadata"],
+        "title": "RecommendationRequest"
+      },
+      "RecommendationResponse": {
+        "properties": {
+          "recommendations": {
+            "additionalProperties": {
+              "items": { "$ref": "#/components/schemas/AIRecommendationItem" },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Recommendations"
+          },
+          "map_title": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Map Title"
+          }
+        },
+        "type": "object",
+        "required": ["recommendations"],
+        "title": "RecommendationResponse"
+      },
+      "SignupRequest": {
+        "properties": {
+          "email": { "type": "string", "format": "email", "title": "Email" },
+          "password": {
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 8,
+            "title": "Password",
+            "description": "비밀번호 (8~72자)"
+          },
+          "nickname": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Nickname",
+            "description": "닉네임"
+          }
+        },
+        "type": "object",
+        "required": ["email", "password", "nickname"],
+        "title": "SignupRequest"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": { "type": "string", "title": "Access Token" },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": ["access_token"],
+        "title": "TokenResponse"
+      },
+      "UserResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "email": { "type": "string", "title": "Email" },
+          "nickname": { "type": "string", "title": "Nickname" }
+        },
+        "type": "object",
+        "required": ["id", "email", "nickname"],
+        "title": "UserResponse"
+      },
+      "UserStatsResponse": {
+        "properties": {
+          "total_archived": {
+            "type": "integer",
+            "title": "Total Archived",
+            "description": "총 아카이빙된 노드 수"
+          },
+          "total_maps": {
+            "type": "integer",
+            "title": "Total Maps",
+            "description": "과몰입 지도 수"
+          },
+          "weekly_nodes": {
+            "type": "integer",
+            "title": "Weekly Nodes",
+            "description": "이번 주 생성된 노드 수"
+          }
+        },
+        "type": "object",
+        "required": ["total_archived", "total_maps", "weekly_nodes"],
+        "title": "UserStatsResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": { "anyOf": [{ "type": "string" }, { "type": "integer" }] },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": { "type": "string", "title": "Message" },
+          "type": { "type": "string", "title": "Error Type" }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": { "HTTPBearer": { "type": "http", "scheme": "bearer" } }
+  }
+}
