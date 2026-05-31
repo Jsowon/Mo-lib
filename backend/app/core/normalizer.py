@@ -28,6 +28,7 @@ _TMDB_GENRE_MAP: dict[int, str] = {
 
 class ContentItem(BaseModel):
     domain: str
+    external_id: str
     title: str
     description: str
     genre: list[str]
@@ -48,6 +49,7 @@ def normalize_spotify_track(item: dict) -> ContentItem:
     thumbnail_list = [img["url"] for img in images] if images else []
     return ContentItem(
         domain="music",
+        external_id=item.get("id", ""),
         title=item.get("name", ""),
         description="",
         genre=item.get("genres", []),
@@ -75,6 +77,7 @@ def normalize_aladin_book(item: dict) -> ContentItem:
 
     return ContentItem(
         domain="book",
+        external_id=str(item.get("itemId", "")),
         title=item.get("title", ""),
         description=item.get("description", ""),
         genre=genre,
@@ -94,6 +97,7 @@ def normalize_tmdb_movie(item: dict) -> ContentItem:
 
     return ContentItem(
         domain="film",
+        external_id=str(item.get("id", "")),
         title=item.get("title", ""),
         description=item.get("overview", ""),
         genre=genre,

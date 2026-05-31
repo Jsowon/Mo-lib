@@ -46,6 +46,14 @@ export interface Node {
   created_at: string;
 }
 
+// LocalNode (Node를 확장한 로컬 UI 상태 타입)
+export interface LocalNode extends Node {
+  nodeStatus?: 'confirmed' | 'pending';   // 로컬 UI 상태
+  reason?: string | null;                  // pending 노드용 연결 이유
+  x?: number;                              // 레이아웃 좌표
+  y?: number;
+}
+
 // Edge (노드 간 연결)
 export interface Edge {
   id: string;
@@ -60,7 +68,7 @@ export interface RecommendationRequest {
   content_id: string;
   title: string;
   domain: Domain;
-  metadata?: Record<string, unknown>;
+  metadata: Record<string, unknown>; // 백엔드 required 필드
   history?: unknown[];
   exclude_domains?: string[];
 }
