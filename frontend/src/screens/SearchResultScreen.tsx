@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { searchAPI, mapsAPI, nodesAPI } from "../api/endpoints";
 import { ContentItem, Domain, SearchContentItem } from "../types";
 import { HomeStackParamList, RootTabParamList } from "../navigation/types";
+import ContentDetailSheet from "../components/common/ContentDetailSheet";
 
 // ── 네비게이션 타입 ───────────────────────────────────────────────────────────
 type RoutePropType = RouteProp<HomeStackParamList, "SearchResult">;
@@ -163,6 +164,10 @@ export default function SearchResultScreen() {
   const [modalItems, setModalItems] = useState<ContentItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
+  // 콘텐츠 상세 BottomSheet
+  const [detailSheetVisible, setDetailSheetVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
+
   // 지도 생성 + 노드 추가 로딩 상태
   const [isCreating, setIsCreating] = useState(false);
 
@@ -187,7 +192,8 @@ export default function SearchResultScreen() {
 
         // SearchResponse → ContentItem[] 매핑
         const mapped: ContentItem[] = res.data.results.map((item: SearchContentItem) => ({
-          external_id: '', // SearchContentItem에는 external_id 없음 (빈 문자열로 대체)
+          // TODO: 백엔드 검색 API에 external_id 추가되면 item.external_id로 교체
+          external_id: item.title,
           domain: item.domain as Domain,
           title: item.title,
           description: item.description,
@@ -226,13 +232,15 @@ export default function SearchResultScreen() {
       setModalItems(duplicates);
       setModalVisible(true);
     } else {
-      createMapAndNode(item);
+      setSelectedItem(item);
+      setDetailSheetVisible(true);
     }
   };
 
   const handleModalSelect = (item: ContentItem) => {
     setModalVisible(false);
-    createMapAndNode(item);
+    setSelectedItem(item);
+    setDetailSheetVisible(true);
   };
 
   // ── 지도 생성 + 루트노드 추가 플로우 ──────────────────────────────────────
@@ -340,7 +348,7 @@ export default function SearchResultScreen() {
       ) : (
         <FlatList
           data={results}
-          keyExtractor={(item, idx) => item.external_id ?? String(idx)}
+          keyExtractor={(item, idx) => item.external_id || `item-${idx}`}
           renderItem={({ item }) => (
             <ContentCard
               item={item}
@@ -373,7 +381,7 @@ export default function SearchResultScreen() {
               const metaParts = [creator, year, country].filter(Boolean).join(" · ");
               return (
                 <TouchableOpacity
-                  key={item.external_id ?? idx}
+                  key={item.external_id || `modal-${idx}`}
                   style={styles.modalItem}
                   onPress={() => handleModalSelect(item)}
                   activeOpacity={0.7}
@@ -415,6 +423,17 @@ export default function SearchResultScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* 콘텐츠 상세 BottomSheet */}
+      <ContentDetailSheet
+        visible={detailSheetVisible}
+        item={selectedItem}
+        onStartObsession={(item) => {
+          setDetailSheetVisible(false);
+          createMapAndNode(item);
+        }}
+        onClose={() => setDetailSheetVisible(false)}
+      />
 
       {/* 지도 생성 중 로딩 오버레이 */}
       {isCreating && (

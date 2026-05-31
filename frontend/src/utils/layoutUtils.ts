@@ -19,6 +19,7 @@ export interface Edge {
   id: string;
   source_node_id: string;
   target_node_id: string;
+  reason?: string | null;
 }
 
 export interface PositionedNode extends Node {
@@ -56,7 +57,7 @@ export function calculateNodePositions(
   });
 
   // 캔버스 중심점
-  const centerX = SCREEN_WIDTH * 2;
+  const centerX = SCREEN_WIDTH / 2;
 
   // 각 레이어의 노드 위치 계산
   const positions = new Map<string, { x: number; y: number }>();
@@ -94,13 +95,19 @@ export function calculateAllNodePositions(
   nodes: Node[],
   edges: Edge[]
 ): PositionedNode[] {
+  console.log('[calculateAllNodePositions] nodes:', nodes.length, 'edges:', edges.length);
   const mapIds = Array.from(new Set(nodes.map((n) => n.map_id)));
+  console.log('[calculateAllNodePositions] mapIds:', mapIds);
 
   let allPositionedNodes: PositionedNode[] = [];
   let currentXOffset = 0;
 
   mapIds.forEach((mapId) => {
     const mapPositionedNodes = calculateNodePositions(nodes, edges, mapId);
+    console.log('[calculateAllNodePositions] mapId:', mapId, 'positioned:', mapPositionedNodes.length);
+    if (mapPositionedNodes.length > 0) {
+      console.log('[positioned node]', JSON.stringify(mapPositionedNodes[0]));
+    }
 
     // 각 맵 클러스터를 가로로 배치 (겹치지 않도록)
     const offsetNodes = mapPositionedNodes.map((node) => ({

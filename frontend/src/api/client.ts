@@ -101,6 +101,7 @@ apiClient.interceptors.response.use(
     // 422 유효성 에러 메시지 파싱
     if (error.response?.status === 422) {
       const detail = error.response.data?.detail;
+      console.error('🚨 [422 Validation Error] Full detail:', JSON.stringify(detail, null, 2));
       if (Array.isArray(detail)) {
         const messages = detail.map((d: { msg: string }) => d.msg).join(', ');
         return Promise.reject(new Error(messages));
@@ -131,6 +132,7 @@ searchClient.interceptors.response.use(
 
     if (error.response?.status === 422) {
       const detail = error.response.data?.detail;
+      console.error('🚨 [422 Validation Error - Search] Full detail:', JSON.stringify(detail, null, 2));
       if (Array.isArray(detail)) {
         const messages = detail.map((d: { msg: string }) => d.msg).join(', ');
         return Promise.reject(new Error(messages));

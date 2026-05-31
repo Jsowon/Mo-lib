@@ -8,7 +8,12 @@ module.exports = {
     userInterfaceStyle: "light",
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.taennny.molib"
+      bundleIdentifier: "com.taennny.molib",
+      infoPlist: {
+        NSAppTransportSecurity: {
+          NSAllowsArbitraryLoads: true
+        }
+      }
     },
     android: {
       adaptiveIcon: {

@@ -40,6 +40,7 @@ export default function NodeCircle({
   isPending = false,
   onPress,
 }: NodeCircleProps) {
+  console.log('[NodeCircle] render', id, title, 'is_root:', is_root, 'isPending:', isPending);
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
   // 루트 노드 회전 애니메이션
