@@ -55,24 +55,48 @@ export interface Edge {
   reason: string | null;
 }
 
-// Recommendation (AI 추천 결과 아이템)
-export interface RecommendationItem {
-  external_id: string | null;
-  domain: Domain;
+// Recommendation (AI 추천 요청 / 응답)
+export interface RecommendationRequest {
+  content_id: string;
   title: string;
-  description: string | null;
-  image_url: string | null;
-  emotion_tags: string[];
+  domain: Domain;
+  metadata?: Record<string, unknown>;
+  history?: unknown[];
+  exclude_domains?: string[];
+}
+
+export interface AIRecommendationItem {
+  title: string;
   reason: string;
-  metadata: Record<string, unknown>;
+  tags: string[];
+  connection_keyword: string;
 }
 
 export interface RecommendationResponse {
-  cached: boolean;
-  recommendations: RecommendationItem[];
+  recommendations: {
+    [domain: string]: AIRecommendationItem[];
+  };
+  map_title?: string | null;
 }
 
 // Content Search (검색 결과)
+export interface SearchContentItem {
+  domain: string;
+  title: string;
+  description: string;
+  genre: string[];
+  creator: string;
+  keywords: string[];
+  thumbnail_url: string[];
+}
+
+export interface SearchResponse {
+  results: SearchContentItem[];
+  total: number;
+  error?: string | null;
+}
+
+// 기존 ContentItem 유지 (SearchResultScreen에서 사용 중)
 export interface ContentItemMetadata {
   // 영화
   director?: string;
@@ -98,9 +122,22 @@ export interface ContentItem {
   metadata: ContentItemMetadata;
 }
 
-export interface ContentSearchResponse {
-  items: ContentItem[];
-  total: number;
-  page: number;
-  size: number;
+// Node creation request (백엔드 NodeSaveRequest 명세에 맞춤)
+export interface CreateNodeRequest {
+  title: string;
+  domain: Domain;
+  step_order: number;
+  external_id?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  emotion_tags?: string[];
+  is_root?: boolean;
+  metadata?: Record<string, unknown>;
+}
+
+// Edge creation request
+export interface EdgeSaveRequest {
+  source_node_id: string;
+  target_node_id: string;
+  reason?: string | null;
 }

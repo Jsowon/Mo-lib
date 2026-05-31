@@ -1,10 +1,35 @@
 import { create } from "zustand";
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
+
+// Platform-aware storage helpers
+const getToken = async (key: string): Promise<string | null> => {
+  if (Platform.OS === "web") {
+    return localStorage.getItem(key);
+  }
+  return await SecureStore.getItemAsync(key);
+};
+
+const setToken = async (key: string, value: string): Promise<void> => {
+  if (Platform.OS === "web") {
+    localStorage.setItem(key, value);
+    return;
+  }
+  await SecureStore.setItemAsync(key, value);
+};
+
+const deleteToken = async (key: string): Promise<void> => {
+  if (Platform.OS === "web") {
+    localStorage.removeItem(key);
+    return;
+  }
+  await SecureStore.deleteItemAsync(key);
+};
 
 interface AuthState {
   accessToken: string | null;
   nickname: string | null;
-  email: string | null; // 추가
+  email: string | null;
   isLoggedIn: boolean;
 
   setAuth: (token: string, nickname: string, email: string) => Promise<void>;
@@ -15,27 +40,27 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   accessToken: null,
   nickname: null,
-  email: null, // 추가
+  email: null,
   isLoggedIn: false,
 
   setAuth: async (token, nickname, email) => {
-    await SecureStore.setItemAsync("access_token", token);
-    await SecureStore.setItemAsync("nickname", nickname);
-    await SecureStore.setItemAsync("email", email); // 추가
+    await setToken("access_token", token);
+    await setToken("nickname", nickname);
+    await setToken("email", email);
     set({ accessToken: token, nickname, email, isLoggedIn: true });
   },
 
   clearAuth: async () => {
-    await SecureStore.deleteItemAsync("access_token");
-    await SecureStore.deleteItemAsync("nickname");
-    await SecureStore.deleteItemAsync("email"); // 추가
+    await deleteToken("access_token");
+    await deleteToken("nickname");
+    await deleteToken("email");
     set({ accessToken: null, nickname: null, email: null, isLoggedIn: false });
   },
 
   hydrate: async () => {
-    const token = await SecureStore.getItemAsync("access_token");
-    const nickname = await SecureStore.getItemAsync("nickname");
-    const email = await SecureStore.getItemAsync("email"); // 추가
+    const token = await getToken("access_token");
+    const nickname = await getToken("nickname");
+    const email = await getToken("email");
     if (token && nickname) {
       set({ accessToken: token, nickname, email, isLoggedIn: true });
     }

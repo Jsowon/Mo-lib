@@ -1,4 +1,4 @@
-import { ContentItem } from "../types";
+import { NavigatorScreenParams } from "@react-navigation/native";
 
 export type HomeStackParamList = {
   HomeMain: undefined;
@@ -6,13 +6,10 @@ export type HomeStackParamList = {
     domain: string;
     query: string;
   };
-  Recommendation: {
-    item: ContentItem;
-  };
 };
 
 export type RootTabParamList = {
-  Home: undefined;
+  Home: NavigatorScreenParams<HomeStackParamList> | undefined;
   Map: { mapId?: string } | undefined;
   Archive: undefined;
 };

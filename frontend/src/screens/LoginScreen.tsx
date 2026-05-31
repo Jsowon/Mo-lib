@@ -46,8 +46,15 @@ export default function LoginScreen() {
 
     try {
       setLoading(true);
-      const res = await authAPI.login({ email, password });
-      await setAuth(res.data.access_token, res.data.nickname, email);
+      const loginRes = await authAPI.login({ email, password });
+      const token = loginRes.data.access_token;
+
+      // 토큰을 먼저 저장 (이후 API 호출에 사용됨)
+      await setAuth(token, "", email);
+
+      // /auth/me로 닉네임 가져오기
+      const meRes = await authAPI.me();
+      await setAuth(token, meRes.data.nickname, email);
     } catch (err: any) {
       const status = err.response?.status;
       if (status === 401) {

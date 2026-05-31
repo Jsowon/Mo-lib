@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   Modal,
@@ -13,15 +14,20 @@ import {
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { CompositeNavigationProp } from "@react-navigation/native";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { contentAPI } from "../api/endpoints";
-import { ContentItem, Domain } from "../types";
-import { HomeStackParamList } from "../navigation/types";
+import { searchAPI, mapsAPI, nodesAPI } from "../api/endpoints";
+import { ContentItem, Domain, SearchContentItem } from "../types";
+import { HomeStackParamList, RootTabParamList } from "../navigation/types";
 
 // ── 네비게이션 타입 ───────────────────────────────────────────────────────────
 type RoutePropType = RouteProp<HomeStackParamList, "SearchResult">;
-type NavPropType = NativeStackNavigationProp<HomeStackParamList, "SearchResult">;
+type NavPropType = CompositeNavigationProp<
+  NativeStackNavigationProp<HomeStackParamList, "SearchResult">,
+  BottomTabNavigationProp<RootTabParamList>
+>;
 
 // ── 상수 ─────────────────────────────────────────────────────────────────────
 const DOMAIN_LABEL: Record<Domain, string> = {
@@ -157,6 +163,9 @@ export default function SearchResultScreen() {
   const [modalItems, setModalItems] = useState<ContentItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
+  // 지도 생성 + 노드 추가 로딩 상태
+  const [isCreating, setIsCreating] = useState(false);
+
   // ── API 호출 ────────────────────────────────────────────────────────────────
   const search = useCallback(
     async (q: string) => {
@@ -164,8 +173,36 @@ export default function SearchResultScreen() {
       setLoading(true);
       setError(null);
       try {
-        const res = await contentAPI.search({ domain, q: q.trim() });
-        setResults(res.data.items ?? []);
+        // domain에 따라 다른 엔드포인트 호출
+        let res;
+        if (domain === 'movie') {
+          res = await searchAPI.movie(q.trim());
+        } else if (domain === 'music') {
+          res = await searchAPI.music(q.trim());
+        } else if (domain === 'book') {
+          res = await searchAPI.book(q.trim());
+        } else {
+          throw new Error('지원하지 않는 도메인입니다.');
+        }
+
+        // SearchResponse → ContentItem[] 매핑
+        const mapped: ContentItem[] = res.data.results.map((item: SearchContentItem) => ({
+          external_id: '', // SearchContentItem에는 external_id 없음 (빈 문자열로 대체)
+          domain: item.domain as Domain,
+          title: item.title,
+          description: item.description,
+          image_url: item.thumbnail_url?.[0] || null,
+          year: null,
+          country: null,
+          metadata: {
+            genres: item.genre,
+            director: item.domain === 'movie' ? item.creator : undefined,
+            author: item.domain === 'book' ? item.creator : undefined,
+            artist: item.domain === 'music' ? item.creator : undefined,
+          },
+        }));
+
+        setResults(mapped);
         setTotal(res.data.total ?? 0);
       } catch {
         setError("검색 중 오류가 발생했어요. 다시 시도해 주세요.");
@@ -189,13 +226,46 @@ export default function SearchResultScreen() {
       setModalItems(duplicates);
       setModalVisible(true);
     } else {
-      navigation.navigate("Recommendation", { item });
+      createMapAndNode(item);
     }
   };
 
   const handleModalSelect = (item: ContentItem) => {
     setModalVisible(false);
-    navigation.navigate("Recommendation", { item });
+    createMapAndNode(item);
+  };
+
+  // ── 지도 생성 + 루트노드 추가 플로우 ──────────────────────────────────────
+  const createMapAndNode = async (item: ContentItem) => {
+    setIsCreating(true);
+    try {
+      // 1. 지도 생성
+      const mapRes = await mapsAPI.create({ title: item.title });
+      const mapId = mapRes.data.id;
+
+      // 2. 루트노드 추가
+      await nodesAPI.add(mapId, {
+        title: item.title,
+        domain: item.domain,
+        step_order: 0,
+        is_root: true,
+        description: item.description,
+        image_url: item.image_url,
+        external_id: item.external_id,
+        emotion_tags: [],
+        metadata: item.metadata as Record<string, unknown>,
+      });
+
+      // 3. Map 탭으로 이동
+      navigation.navigate("Map", { mapId });
+    } catch (err: any) {
+      Alert.alert(
+        "오류",
+        err.message || "지도 생성 중 오류가 발생했어요. 다시 시도해 주세요."
+      );
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   // ── 렌더 ────────────────────────────────────────────────────────────────────
@@ -345,6 +415,16 @@ export default function SearchResultScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* 지도 생성 중 로딩 오버레이 */}
+      {isCreating && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingBox}>
+            <ActivityIndicator color="#D97BA0" size="large" />
+            <Text style={styles.loadingOverlayText}>지도를 생성하는 중...</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -581,5 +661,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "#8899BB",
+  },
+
+  // 로딩 오버레이
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
+  },
+  loadingBox: {
+    backgroundColor: "#151D30",
+    borderRadius: 16,
+    paddingHorizontal: 32,
+    paddingVertical: 24,
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingOverlayText: {
+    fontSize: 14,
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
 });
