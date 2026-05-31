@@ -1,11 +1,15 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import ForeignKey, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Edge(Base):
@@ -38,7 +42,7 @@ class Edge(Base):
     )
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime, nullable=False, default=_utcnow
     )
 
     # relationships

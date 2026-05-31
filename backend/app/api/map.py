@@ -227,7 +227,7 @@ async def update_map_title(
         raise NotFoundException("지도를 찾을 수 없습니다.")
 
     map_obj.title = request.title
-    map_obj.updated_at = datetime.now(timezone.utc)
+    map_obj.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     await db.commit()
     await db.refresh(map_obj)
 

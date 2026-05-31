@@ -1,11 +1,16 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String
+from sqlalchemy import DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+
+def _utcnow() -> datetime:
+    """asyncpg 호환: timezone-aware → naive UTC로 변환"""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class User(Base):
@@ -18,12 +23,10 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(60), nullable=False)
     nickname: Mapped[str] = mapped_column(String(30), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime, nullable=False, default=_utcnow
     )
     updated_at: Mapped[datetime] = mapped_column(
-        nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime, nullable=False, default=_utcnow, onupdate=_utcnow
     )
 
     # relationships
