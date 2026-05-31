@@ -1,11 +1,15 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Map(Base):
@@ -21,12 +25,10 @@ class Map(Base):
     )
     title: Mapped[str] = mapped_column(String(50), nullable=False, default="새 지도")
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime, nullable=False, default=_utcnow
     )
     updated_at: Mapped[datetime] = mapped_column(
-        nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime, nullable=False, default=_utcnow, onupdate=_utcnow
     )
 
     # relationships

@@ -35,7 +35,8 @@ class Node(Base):
     is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     step_order: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=lambda: datetime.now(timezone.utc)
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
     )
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
 

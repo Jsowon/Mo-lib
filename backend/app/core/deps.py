@@ -2,6 +2,8 @@ import uuid
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.jwt import decode_token
 from app.database import get_db
@@ -11,9 +13,9 @@ from app.models.user import User
 security_scheme = HTTPBearer()
 
 
-def get_current_user(
+async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> User:
     """
     Authorization: Bearer <token> 에서 유저 추출.
@@ -28,7 +30,8 @@ def get_current_user(
         raise AuthenticationError("유효하지 않은 토큰입니다.")
 
     try:
-        user = db.query(User).filter(User.id == uuid.UUID(user_id)).first()
+        result = await db.execute(select(User).filter(User.id == uuid.UUID(user_id)))
+        user = result.scalars().first()
     except (ValueError, AttributeError):
         raise AuthenticationError("유효하지 않은 토큰입니다.")
 

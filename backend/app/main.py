@@ -7,6 +7,7 @@ from app.api.archive import router as archive_router
 from app.api.auth import router as auth_router
 from app.api.spotify import router as spotify_router
 from app.api.tmdb import router as tmdb_router
+from app.api.user import router as user_router
 from app.config import Settings, get_settings
 from app.errors import register_error_handlers
 
@@ -38,6 +39,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(archive_router, prefix="/api/v1")
 app.include_router(spotify_router)
 app.include_router(aladin_router)
+app.include_router(user_router, prefix="/api/v1")
 app.include_router(tmdb_router)
 
 
