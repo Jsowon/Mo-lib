@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Colors } from "../constants/colors";
 
 const { width } = Dimensions.get("window");
 
@@ -37,11 +38,11 @@ function Slide1() {
           resizeMode="contain"
         />
         <View style={styles.slide1TextContainer}>
-          <Text style={[styles.slide1Text, { color: "#FFFFFF" }]}>
+          <Text style={[styles.slide1Text, { color: Colors.text.starlight }]}>
             당신만의
           </Text>
-          <Text style={[styles.slide1Text, { color: "#7D71CD" }]}>취향을</Text>
-          <Text style={[styles.slide1Text, { color: "#B97FAC" }]}>
+          <Text style={[styles.slide1Text, { color: Colors.accent.pulsar }]}>취향을</Text>
+          <Text style={[styles.slide1Text, { color: Colors.accent.nebulaRose }]}>
             발견하세요
           </Text>
         </View>
@@ -165,7 +166,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#080714",
+    backgroundColor: Colors.background.void,
   },
   skipContainer: {
     position: "absolute",
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
     paddingRight: 24,
   },
   skipText: {
-    color: "#AAAACC",
+    color: Colors.text.moonmist,
     fontSize: 15,
   },
   slide: {
@@ -215,49 +216,49 @@ const styles = StyleSheet.create({
   },
   slide2SubTitle: {
     fontSize: 28,
-    color: "#CCCCEE",
+    color: Colors.text.starlight,
     fontWeight: "400",
   },
   slide2Title: {
     fontSize: 32,
-    color: "#FFFFFF",
+    color: Colors.text.starlight,
     fontWeight: "700",
   },
   cardsContainer: {
     gap: 12,
   },
   card: {
-    backgroundColor: "rgba(26, 24, 48, 0.85)",
+    backgroundColor: "rgba(28, 26, 46, 0.85)",
     borderRadius: 14,
     padding: 20,
     borderWidth: 1,
-    borderColor: "#2A2845",
+    borderColor: Colors.background.comet,
   },
   cardTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#9B8FFF",
+    color: Colors.accent.aurora,
     marginBottom: 8,
   },
   cardDesc: {
     fontSize: 14,
-    color: "#AAAACC",
+    color: Colors.text.moonmist,
   },
 
   // 슬라이드 3
   imagePlaceholder: {
     width: "100%",
     height: 240,
-    backgroundColor: "rgba(200, 200, 216, 0.15)",
+    backgroundColor: "rgba(232, 230, 248, 0.15)",
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 32,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(232, 230, 248, 0.1)",
   },
   imagePlaceholderText: {
-    color: "#888",
+    color: Colors.text.dusk,
     fontSize: 18,
   },
   slide3TextContainer: {
@@ -265,35 +266,35 @@ const styles = StyleSheet.create({
   },
   slide3SubTitle: {
     fontSize: 28,
-    color: "#CCCCEE",
+    color: Colors.text.starlight,
     fontWeight: "400",
   },
   slide3Title: {
     fontSize: 36,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.starlight,
     marginBottom: 20,
   },
   quote: {
     fontSize: 15,
-    color: "#CCCCEE",
+    color: Colors.text.starlight,
     lineHeight: 24,
     marginBottom: 12,
   },
   quoteAuthor: {
     fontSize: 14,
-    color: "#9B8FFF",
+    color: Colors.accent.aurora,
     fontWeight: "600",
   },
   startButton: {
-    backgroundColor: "#4B3FBF",
+    backgroundColor: Colors.accent.orbit,
     borderRadius: 30,
     paddingVertical: 16,
     paddingHorizontal: 48,
     alignSelf: "center",
   },
   startButtonText: {
-    color: "#FFFFFF",
+    color: Colors.text.starlight,
     fontSize: 17,
     fontWeight: "700",
   },
@@ -316,10 +317,10 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     width: 24,
-    backgroundColor: "#9B8FFF",
+    backgroundColor: Colors.accent.aurora,
   },
   dotInactive: {
     width: 8,
-    backgroundColor: "#444466",
+    backgroundColor: Colors.accent.orbit,
   },
 });

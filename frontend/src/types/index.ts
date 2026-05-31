@@ -1,5 +1,5 @@
 // Domain
-export type Domain = 'movie' | 'music' | 'book';
+export type Domain = "movie" | "music" | "book";
 
 // User
 export interface User {
@@ -14,6 +14,12 @@ export interface LastNode {
   title: string;
   domain: Domain;
   image_url: string | null;
+  node_count?: number;
+  last_node?: {
+    id: string;
+    title: string;
+    image_url?: string;
+  };
 }
 
 export interface Map {
@@ -49,19 +55,89 @@ export interface Edge {
   reason: string | null;
 }
 
-// Recommendation (AI 추천 결과 아이템)
-export interface RecommendationItem {
-  external_id: string | null;
+// Recommendation (AI 추천 요청 / 응답)
+export interface RecommendationRequest {
+  content_id: string;
+  title: string;
+  domain: Domain;
+  metadata?: Record<string, unknown>;
+  history?: unknown[];
+  exclude_domains?: string[];
+}
+
+export interface AIRecommendationItem {
+  title: string;
+  reason: string;
+  tags: string[];
+  connection_keyword: string;
+}
+
+export interface RecommendationResponse {
+  recommendations: {
+    [domain: string]: AIRecommendationItem[];
+  };
+  map_title?: string | null;
+}
+
+// Content Search (검색 결과)
+export interface SearchContentItem {
+  domain: string;
+  title: string;
+  description: string;
+  genre: string[];
+  creator: string;
+  keywords: string[];
+  thumbnail_url: string[];
+}
+
+export interface SearchResponse {
+  results: SearchContentItem[];
+  total: number;
+  error?: string | null;
+}
+
+// 기존 ContentItem 유지 (SearchResultScreen에서 사용 중)
+export interface ContentItemMetadata {
+  // 영화
+  director?: string;
+  original_title?: string;
+  rating?: number;
+  genres?: string[];
+  // 책
+  author?: string;
+  publisher?: string;
+  // 음악
+  artist?: string;
+  album?: string;
+}
+
+export interface ContentItem {
+  external_id: string;
   domain: Domain;
   title: string;
   description: string | null;
   image_url: string | null;
-  emotion_tags: string[];
-  reason: string;
-  metadata: Record<string, unknown>;
+  year: number | null;
+  country: string | null;
+  metadata: ContentItemMetadata;
 }
 
-export interface RecommendationResponse {
-  cached: boolean;
-  recommendations: RecommendationItem[];
+// Node creation request (백엔드 NodeSaveRequest 명세에 맞춤)
+export interface CreateNodeRequest {
+  title: string;
+  domain: Domain;
+  step_order: number;
+  external_id?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  emotion_tags?: string[];
+  is_root?: boolean;
+  metadata?: Record<string, unknown>;
+}
+
+// Edge creation request
+export interface EdgeSaveRequest {
+  source_node_id: string;
+  target_node_id: string;
+  reason?: string | null;
 }

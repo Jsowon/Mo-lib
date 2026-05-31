@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user
 from app.core.jwt import create_access_token
@@ -23,9 +25,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     status_code=201,
     summary="회원가입",
 )
-def signup(body: SignupRequest, db=Depends(get_db)):
+async def signup(body: SignupRequest, db: AsyncSession = Depends(get_db)):
     # 이메일 중복 검사
-    existing = db.query(User).filter(User.email == body.email).first()
+    result = await db.execute(select(User).filter(User.email == body.email))
+    existing = result.scalars().first()
     if existing:
         raise DuplicateError("이미 등록된 이메일입니다.")
 
@@ -35,8 +38,8 @@ def signup(body: SignupRequest, db=Depends(get_db)):
         nickname=body.nickname,
     )
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
 
     token = create_access_token(str(user.id))
     return TokenResponse(access_token=token)
@@ -47,8 +50,9 @@ def signup(body: SignupRequest, db=Depends(get_db)):
     response_model=TokenResponse,
     summary="로그인",
 )
-def login(body: LoginRequest, db=Depends(get_db)):
-    user = db.query(User).filter(User.email == body.email).first()
+async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).filter(User.email == body.email))
+    user = result.scalars().first()
     if not user or not verify_password(body.password, user.password_hash):
         raise AuthenticationError("이메일 또는 비밀번호가 올바르지 않습니다.")
 
@@ -61,7 +65,7 @@ def login(body: LoginRequest, db=Depends(get_db)):
     response_model=MessageResponse,
     summary="로그아웃",
 )
-def logout(_current_user: User = Depends(get_current_user)):
+async def logout(_current_user: User = Depends(get_current_user)):
     """프론트에서 토큰 삭제. 서버는 200만 반환."""
     return MessageResponse(message="로그아웃되었습니다.")
 
@@ -71,7 +75,7 @@ def logout(_current_user: User = Depends(get_current_user)):
     response_model=UserResponse,
     summary="내 정보 조회",
 )
-def get_me(current_user: User = Depends(get_current_user)):
+async def get_me(current_user: User = Depends(get_current_user)):
     return UserResponse(
         id=str(current_user.id),
         email=current_user.email,

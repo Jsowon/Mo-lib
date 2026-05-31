@@ -7,6 +7,7 @@ import Svg, {
   Rect,
   Circle,
 } from "react-native-svg";
+import { Colors } from "../../constants/colors";
 
 const { width, height } = Dimensions.get("window");
 
@@ -49,14 +50,14 @@ export default function StarBackground() {
       <Defs>
         {/* 메인 배경 그라디언트 — 딥 네이비 */}
         <RadialGradient id="bgGrad" cx="70%" cy="45%" r="65%">
-          <Stop offset="0%" stopColor="#2D2680" stopOpacity="1" />
-          <Stop offset="45%" stopColor="#1A1650" stopOpacity="1" />
-          <Stop offset="100%" stopColor="#080714" stopOpacity="1" />
+          <Stop offset="0%" stopColor={Colors.accent.orbit} stopOpacity="1" />
+          <Stop offset="45%" stopColor={Colors.background.nebulaBase} stopOpacity="1" />
+          <Stop offset="100%" stopColor={Colors.background.void} stopOpacity="1" />
         </RadialGradient>
         {/* 보조 빛 — 오른쪽 중앙 */}
         <RadialGradient id="glowGrad" cx="75%" cy="42%" r="40%">
-          <Stop offset="0%" stopColor="#5B52CC" stopOpacity="0.5" />
-          <Stop offset="100%" stopColor="#5B52CC" stopOpacity="0" />
+          <Stop offset="0%" stopColor={Colors.accent.pulsar} stopOpacity="0.5" />
+          <Stop offset="100%" stopColor={Colors.accent.pulsar} stopOpacity="0" />
         </RadialGradient>
       </Defs>
 
@@ -72,7 +73,7 @@ export default function StarBackground() {
           cx={star.cx}
           cy={star.cy}
           r={star.r}
-          fill="#FFFFFF"
+          fill={Colors.text.starlight}
           opacity={0.3 + Math.random() * 0.5}
         />
       ))}
