@@ -1,6 +1,7 @@
 import { create } from "zustand";
+import { Alert } from "react-native";
 import { Node, Domain, Map as MapItem } from "../types";
-import { archiveAPI, mapsAPI } from "../api/endpoints";
+import { archiveAPI, mapsAPI, nodesAPI } from "../api/endpoints";
 
 const PAGE_SIZE = 20;
 
@@ -28,6 +29,7 @@ interface ArchiveState {
   fetchMore: () => Promise<void>;    // 다음 페이지 추가 로드
   setMapFilter: (mapId: string | null) => void;
   setDomainFilter: (domain: Domain | null) => void;
+  unarchiveNode: (mapId: string, nodeId: string) => Promise<void>;
 }
 
 export const useArchiveStore = create<ArchiveState>((set, get) => ({
@@ -115,5 +117,18 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
   setDomainFilter: (domain) => {
     set({ selectedDomain: domain });
     get().fetchArchive();
+  },
+
+  unarchiveNode: async (mapId: string, nodeId: string) => {
+    try {
+      await nodesAPI.toggleArchive(mapId, nodeId, false);
+      // 성공 시 목록에서 해당 노드 제거
+      set((state) => ({
+        nodes: state.nodes.filter((n) => n.id !== nodeId),
+        total: state.total - 1,
+      }));
+    } catch {
+      Alert.alert('오류', '아카이브 해제에 실패했어요.');
+    }
   },
 }));

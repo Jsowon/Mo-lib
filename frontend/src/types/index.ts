@@ -44,6 +44,7 @@ export interface Node {
   step_order: number;
   metadata: Record<string, unknown>;
   created_at: string;
+  map_title?: string;  // 백엔드 응답에 포함 시 사용 가능 (optional)
 }
 
 // LocalNode (Node를 확장한 로컬 UI 상태 타입)
@@ -96,6 +97,7 @@ export interface SearchContentItem {
   creator: string;
   keywords: string[];
   thumbnail_url: string[];
+  image_url?: string | null;  // 백엔드 신규 필드
   external_id?: string | null;
 }
 

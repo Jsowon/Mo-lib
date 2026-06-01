@@ -59,12 +59,14 @@ function ArchiveDetailSheet({
   visible,
   onClose,
   onNavigateToMap,
+  onUnarchive,
 }: {
   node: Node | null;
   mapTitle: string;
   visible: boolean;
   onClose: () => void;
   onNavigateToMap: () => void;
+  onUnarchive: () => void;
 }) {
   if (!node) return null;
 
@@ -138,6 +140,11 @@ function ArchiveDetailSheet({
           <TouchableOpacity style={sheetStyles.navBtn} onPress={onNavigateToMap}>
             <Text style={sheetStyles.navBtnText}>해당 여정지도로 이동</Text>
           </TouchableOpacity>
+
+          {/* 아카이브 해제 */}
+          <TouchableOpacity style={sheetStyles.unarchiveBtn} onPress={onUnarchive}>
+            <Text style={sheetStyles.unarchiveBtnText}>아카이브 해제</Text>
+          </TouchableOpacity>
         </Pressable>
       </Pressable>
     </Modal>
@@ -206,6 +213,7 @@ export default function ArchiveScreen() {
     fetchMore,
     setMapFilter,
     setDomainFilter,
+    unarchiveNode,
   } = useArchiveStore();
 
   const [sheetNode, setSheetNode] = useState<Node | null>(null);
@@ -232,6 +240,12 @@ export default function ArchiveScreen() {
     if (!sheetNode) return;
     setSheetVisible(false);
     navigation.navigate("Map", { mapId: sheetNode.map_id });
+  };
+
+  const handleUnarchive = async () => {
+    if (!sheetNode) return;
+    setSheetVisible(false);
+    await unarchiveNode(sheetNode.map_id, sheetNode.id);
   };
 
   return (
@@ -308,7 +322,7 @@ export default function ArchiveScreen() {
           renderItem={({ item, index }) => (
             <ArchiveCard
               node={item}
-              mapTitle={mapLookup[item.map_id] ?? "지도"}
+              mapTitle={item.map_title ?? mapLookup[item.map_id] ?? "지도"}
               isFirst={index === 0}
               isLast={index === nodes.length - 1}
               onPress={() => handleCardPress(item)}
@@ -320,10 +334,11 @@ export default function ArchiveScreen() {
       {/* 아카이브 상세 BottomSheet */}
       <ArchiveDetailSheet
         node={sheetNode}
-        mapTitle={sheetNode ? (mapLookup[sheetNode.map_id] ?? "지도") : ""}
+        mapTitle={sheetNode ? (sheetNode.map_title ?? mapLookup[sheetNode.map_id] ?? "지도") : ""}
         visible={sheetVisible}
         onClose={() => setSheetVisible(false)}
         onNavigateToMap={handleNavigateToMap}
+        onUnarchive={handleUnarchive}
       />
     </View>
   );
@@ -555,5 +570,18 @@ const sheetStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+  unarchiveBtn: {
+    marginTop: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E05C6E",
+    alignItems: "center",
+  },
+  unarchiveBtnText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#E05C6E",
   },
 });
