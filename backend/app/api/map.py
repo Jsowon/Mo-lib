@@ -44,6 +44,10 @@ class NodeSaveRequest(BaseModel):
     metadata: Optional[dict] = None
 
 
+class NodeUpdateRequest(BaseModel):
+    is_archived: Optional[bool] = None
+
+
 class EdgeSaveRequest(BaseModel):
     source_node_id: str
     target_node_id: str
@@ -358,6 +362,50 @@ async def save_node(
         emotion_tags=new_node.emotion_tags,
         is_root=new_node.is_root,
         step_order=new_node.step_order,
+    )
+
+
+@router.patch(
+    "/{map_id}/nodes/{node_id}",
+    response_model=NodeResponse,
+    summary="노드 아카이브 토글",
+    description="노드의 is_archived 상태를 변경합니다.",
+)
+async def update_node(
+    map_id: str,
+    node_id: str,
+    request: NodeUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Node).where(
+            Node.id == uuid.UUID(node_id),
+            Node.map_id == uuid.UUID(map_id),
+        )
+    )
+    node = result.scalar_one_or_none()
+
+    if not node:
+        raise NotFoundException("노드를 찾을 수 없습니다.")
+
+    if request.is_archived is not None:
+        node.is_archived = request.is_archived
+
+    await db.commit()
+    await db.refresh(node)
+
+    return NodeResponse(
+        id=str(node.id),
+        map_id=str(node.map_id),
+        domain=node.domain,
+        external_id=node.external_id,
+        title=node.title,
+        description=node.description,
+        image_url=node.image_url,
+        emotion_tags=node.emotion_tags,
+        is_root=node.is_root,
+        step_order=node.step_order,
     )
 
 
