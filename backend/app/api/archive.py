@@ -6,10 +6,12 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import get_current_user
 from app.core.exceptions import NotFoundException
 from app.database import get_db
 from app.models.map import Map
 from app.models.node import Node
+from app.models.user import User
 
 router = APIRouter(prefix="/archive", tags=["archive"])
 
@@ -50,11 +52,12 @@ async def get_archive(
     page: int = Query(1, ge=1, description="페이지 번호"),
     size: int = Query(20, ge=1, le=100, description="페이지 크기"),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     base = (
         select(Node, Map.title.label("map_title"))
         .join(Map, Node.map_id == Map.id)
-        .where(Node.is_archived == True)  # noqa: E712
+        .where(Node.is_archived == True, Map.user_id == current_user.id)  # noqa: E712
     )
 
     if map_id:
@@ -97,8 +100,16 @@ async def get_archive(
     summary="아카이브에서 제거",
     description="노드를 아카이브에서 제거합니다 (is_archived=False). 노드 자체는 삭제되지 않습니다.",  # noqa: E501
 )
-async def remove_from_archive(node_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Node).where(Node.id == uuid.UUID(node_id)))
+async def remove_from_archive(
+    node_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Node)
+        .join(Map, Node.map_id == Map.id)
+        .where(Node.id == uuid.UUID(node_id), Map.user_id == current_user.id)
+    )
     node = result.scalar_one_or_none()
 
     if not node:
@@ -114,11 +125,15 @@ async def remove_from_archive(node_id: str, db: AsyncSession = Depends(get_db)):
     summary="아카이브에 추가",
     description="노드를 아카이브에 추가합니다 (is_archived=True).",
 )
-async def add_to_archive(node_id: str, db: AsyncSession = Depends(get_db)):
+async def add_to_archive(
+    node_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     result = await db.execute(
         select(Node, Map.title.label("map_title"))
         .join(Map, Node.map_id == Map.id)
-        .where(Node.id == uuid.UUID(node_id))
+        .where(Node.id == uuid.UUID(node_id), Map.user_id == current_user.id)
     )
     row = result.one_or_none()
 
