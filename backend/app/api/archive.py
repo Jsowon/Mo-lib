@@ -48,7 +48,7 @@ class ArchiveListResponse(BaseModel):
 )
 async def get_archive(
     map_id: Optional[str] = Query(None, description="지도 ID 필터"),
-    domain: Optional[str] = Query(None, description="도메인 필터 (film/music/book)"),
+    domain: Optional[str] = Query(None, description="도메인 필터 (movie/music/book)"),
     page: int = Query(1, ge=1, description="페이지 번호"),
     size: int = Query(20, ge=1, le=100, description="페이지 크기"),
     db: AsyncSession = Depends(get_db),

@@ -10,7 +10,7 @@ from app.schemas.ai_interface import AIRecommendationItem, HistoryItem
 
 
 class RecommendationRequest(BaseModel):
-    domain: str  # film / book / music
+    domain: str  # movie / book / music
     content_id: str
     title: str
     metadata: dict

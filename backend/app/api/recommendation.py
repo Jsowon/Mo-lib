@@ -24,7 +24,7 @@ def normalize_metadata(domain: str, metadata: dict) -> dict:
     genre = metadata.get("genre", [])
     genre_str = genre[0] if isinstance(genre, list) and genre else genre or ""
 
-    if domain == "film":
+    if domain == "movie":
         return {
             "genre": genre_str,
             "synopsis": metadata.get("description", ""),
