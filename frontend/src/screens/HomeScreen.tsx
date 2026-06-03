@@ -19,6 +19,7 @@ import { HomeStackParamList, RootTabParamList } from "../navigation/types";
 import { Map as MapItem } from "../types";
 import { mapsAPI, usersAPI } from "../api/endpoints";
 import Header from "../components/common/Header";
+import { Colors } from "../constants/colors";
 
 type NavProp = NativeStackNavigationProp<HomeStackParamList, "HomeMain">;
 type TabNavProp = BottomTabNavigationProp<RootTabParamList>;
@@ -132,7 +133,7 @@ export default function HomeScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder={PLACEHOLDER[selectedDomain]}
-            placeholderTextColor="#555577"
+            placeholderTextColor={Colors.text.muted}
             value={searchText}
             onChangeText={setSearchText}
             returnKeyType="search"
@@ -193,7 +194,7 @@ export default function HomeScreen() {
 
         {mapsLoading ? (
           <View style={styles.mapsLoadingContainer}>
-            <ActivityIndicator size="small" color="#C084A0" />
+            <ActivityIndicator size="small" color={Colors.accent.primary} />
           </View>
         ) : (
           <FlatList
@@ -245,7 +246,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0A0E1A",
+    backgroundColor: Colors.background.void,
   },
   scroll: {
     flex: 1,
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1A1830",
+    backgroundColor: Colors.background.card,
     borderRadius: 30,
     marginHorizontal: 20,
     paddingHorizontal: 16,
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
 
   // 도메인 탭
@@ -300,18 +301,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: "#1A1830",
+    backgroundColor: Colors.background.card,
   },
   domainPillActive: {
-    backgroundColor: "#C084A0",
+    backgroundColor: Colors.accent.primary,
   },
   domainPillText: {
     fontSize: 14,
-    color: "#AAAACC",
+    color: Colors.text.moonmist,
     fontWeight: "600",
   },
   domainPillTextActive: {
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
 
   // 통계 카드
@@ -323,7 +324,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: "#1A1830",
+    backgroundColor: Colors.background.card,
     borderRadius: 14,
     padding: 16,
     gap: 6,
@@ -331,11 +332,11 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
   statLabel: {
     fontSize: 12,
-    color: "#AAAACC",
+    color: Colors.text.moonmist,
   },
 
   // 최근 지도
@@ -346,7 +347,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
   mapsLoadingContainer: {
     height: 180,
@@ -361,7 +362,7 @@ const styles = StyleSheet.create({
   mapCard: {
     width: CARD_WIDTH * 0.6,
     height: 180,
-    backgroundColor: "#1A1830",
+    backgroundColor: Colors.background.card,
     borderRadius: 16,
     overflow: "hidden",
     justifyContent: "flex-end",
@@ -382,32 +383,32 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#252540",
+    backgroundColor: Colors.ui.pressed,
   },
   mapCardOverlay: {
     padding: 12,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: Colors.background.overlayLight,
     gap: 2,
   },
   mapCardTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
   mapCardSubtitle: {
     fontSize: 11,
-    color: "#AAAACC",
+    color: Colors.text.moonmist,
   },
   mapCardEmpty: {
     width: CARD_WIDTH,
     height: 180,
-    backgroundColor: "#1A1830",
+    backgroundColor: Colors.background.card,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
   mapCardEmptyText: {
     fontSize: 14,
-    color: "#555577",
+    color: Colors.text.muted,
   },
 });

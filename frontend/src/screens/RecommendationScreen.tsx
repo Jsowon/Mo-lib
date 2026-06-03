@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { recommendationAPI, mapsAPI, nodesAPI } from "../api/endpoints";
 import { RecommendationItem, Domain, Map as MapType } from "../types";
 import { HomeStackParamList, RootTabParamList } from "../navigation/types";
+import { Colors } from "../constants/colors";
 
 // ── 네비게이션 타입 ───────────────────────────────────────────────────────────
 type RoutePropType = RouteProp<HomeStackParamList, "Recommendation">;
@@ -40,9 +41,9 @@ const DOMAIN_LABEL: Record<Domain, string> = {
 };
 
 const DOMAIN_COLOR: Record<Domain, string> = {
-  movie: "#E05C6E",
-  book: "#5CA8E0",
-  music: "#7C5CE0",
+  movie: Colors.domain.movie,
+  book: Colors.domain.book,
+  music: Colors.domain.music,
 };
 
 // ── 추천 카드 컴포넌트 ────────────────────────────────────────────────────────
@@ -228,7 +229,7 @@ export default function RecommendationScreen() {
       {/* 로딩 / 에러 / 결과 */}
       {isLoading ? (
         <View style={styles.centerBox}>
-          <ActivityIndicator color="#D97BA0" size="large" />
+          <ActivityIndicator color={Colors.accent.primaryLight} size="large" />
           <Text style={styles.loadingText}>추천을 불러오는 중...</Text>
         </View>
       ) : error ? (
@@ -373,7 +374,7 @@ export default function RecommendationScreen() {
                   disabled={isConfirming}
                 >
                   {isConfirming ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <ActivityIndicator color={Colors.text.primary} size="small" />
                   ) : (
                     <Text style={styles.modalBtnTextConfirm}>이 콘텐츠로 확정</Text>
                   )}
@@ -391,7 +392,7 @@ export default function RecommendationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0A0E1A",
+    backgroundColor: Colors.background.void,
   },
 
   // 헤더
@@ -407,7 +408,7 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: 22,
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
   headerTitleRow: {
     flex: 1,
@@ -415,7 +416,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
 
   // 중앙 상태 (로딩/에러/빈 결과)
@@ -427,32 +428,32 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
-    color: "#6B7A99",
+    color: Colors.text.tertiary,
   },
   emptyText: {
     fontSize: 15,
-    color: "#4A5568",
+    color: Colors.text.placeholder,
   },
   errorText: {
     fontSize: 14,
-    color: "#E05C6E",
+    color: Colors.domain.movie,
     textAlign: "center",
     paddingHorizontal: 32,
   },
   retryBtn: {
     paddingHorizontal: 24,
     paddingVertical: 10,
-    backgroundColor: "#1E293B",
+    backgroundColor: Colors.background.input,
     borderRadius: 10,
   },
   retryText: {
-    color: "#D97BA0",
+    color: Colors.accent.primaryLight,
     fontWeight: "600",
   },
 
   // 캐시 배지
   cacheBadge: {
-    backgroundColor: "#2A3B4D",
+    backgroundColor: Colors.ui.badge,
     paddingHorizontal: 16,
     paddingVertical: 8,
     marginHorizontal: 16,
@@ -462,7 +463,7 @@ const styles = StyleSheet.create({
   },
   cacheBadgeText: {
     fontSize: 13,
-    color: "#8899BB",
+    color: Colors.text.secondary,
     textAlign: "center",
   },
 
@@ -476,7 +477,7 @@ const styles = StyleSheet.create({
   // 추천 카드
   card: {
     flexDirection: "row",
-    backgroundColor: "#141B2D",
+    backgroundColor: Colors.background.modal,
     borderRadius: 14,
     overflow: "hidden",
     gap: 12,
@@ -510,17 +511,17 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     lineHeight: 21,
   },
   cardDescription: {
     fontSize: 12,
-    color: "#8899BB",
+    color: Colors.text.secondary,
     lineHeight: 17,
   },
   cardReason: {
     fontSize: 12,
-    color: "#C084A0",
+    color: Colors.accent.primary,
     lineHeight: 17,
     fontStyle: "italic",
   },
@@ -531,30 +532,30 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   tagChip: {
-    backgroundColor: "#1E293B",
+    backgroundColor: Colors.background.input,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
   tagText: {
     fontSize: 11,
-    color: "#D97BA0",
+    color: Colors.accent.primaryLight,
   },
   tagMore: {
     fontSize: 11,
-    color: "#6B7A99",
+    color: Colors.text.tertiary,
     alignSelf: "center",
   },
 
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
+    backgroundColor: Colors.background.overlayDark,
     justifyContent: "center",
     alignItems: "center",
   },
   modalBox: {
-    backgroundColor: "#151D30",
+    backgroundColor: Colors.background.elevated,
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 24,
@@ -565,7 +566,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     textAlign: "center",
   },
   modalItemInfo: {
@@ -585,7 +586,7 @@ const styles = StyleSheet.create({
   modalItemTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     lineHeight: 21,
   },
   modalTagsRow: {
@@ -594,14 +595,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   modalTagChip: {
-    backgroundColor: "#1E293B",
+    backgroundColor: Colors.background.input,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
   modalTagText: {
     fontSize: 10,
-    color: "#D97BA0",
+    color: Colors.accent.primaryLight,
   },
   modalButtons: {
     flexDirection: "row",
@@ -615,20 +616,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   modalBtnCancel: {
-    backgroundColor: "#1E293B",
+    backgroundColor: Colors.background.input,
   },
   modalBtnConfirm: {
-    backgroundColor: "#C084A0",
+    backgroundColor: Colors.accent.primary,
   },
   modalBtnTextCancel: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#8899BB",
+    color: Colors.text.secondary,
   },
   modalBtnTextConfirm: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
 
   // 지도 선택
@@ -638,7 +639,7 @@ const styles = StyleSheet.create({
   mapSelectionLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#8899BB",
+    color: Colors.text.secondary,
     marginBottom: 4,
   },
   mapOption: {
@@ -647,20 +648,20 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: "#1E293B",
+    backgroundColor: Colors.background.input,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: "transparent",
+    borderColor: Colors.ui.transparent,
   },
   mapOptionSelected: {
-    borderColor: "#C084A0",
+    borderColor: Colors.accent.primary,
   },
   mapOptionRadio: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: "#4A5568",
+    borderColor: Colors.text.placeholder,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -668,11 +669,11 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#C084A0",
+    backgroundColor: Colors.accent.primary,
   },
   mapOptionText: {
     flex: 1,
     fontSize: 14,
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
 });

@@ -15,7 +15,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  useDerivedValue,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -43,6 +45,15 @@ const CANVAS_CY = CANVAS_HEIGHT / 2;  // 1000
 // 황금각(137.5°) 기반 나선 배치 → 정렬 없이 자연스럽게 흩어진 느낌
 const GOLDEN_ANGLE = 2.39996; // 2π / φ²
 
+// 우주 그라디언트 색상 팔레트 - Pan 방향별 무드
+const GRADIENT_PALETTES = {
+  CENTER: ['#0A0914', '#0F0E19', '#13111F'], // 기본 — 깊은 우주
+  LEFT:   ['#0F0E19', '#1C1A2E', '#3D3475'], // 왼쪽 — 심연
+  RIGHT:  ['#13111F', '#3D3475', '#7B6FD4'], // 오른쪽 — 성운 빛
+  UP:     ['#0A0914', '#0D0B1E', '#1C1A2E'], // 위 — 우주 먼지
+  DOWN:   ['#1C1A2E', '#3D3475', '#C97BAF'], // 아래 — 핑크 성운
+};
+
 function getClusterCenter(index: number, total: number): { x: number; y: number } {
   if (total <= 1) return { x: CANVAS_CX, y: CANVAS_CY };
   const radius = 220 + 160 * Math.sqrt(index + 1); // index 커질수록 더 멀리
@@ -60,7 +71,6 @@ type MapNavProp = CompositeNavigationProp<
   NativeStackNavigationProp<HomeStackParamList>
 >;
 
-
 function MapCanvasContent() {
   const navigation = useNavigation<MapNavProp>();
   const route = useRoute<MapRouteProp>();
@@ -69,18 +79,6 @@ function MapCanvasContent() {
   const [mapList, setMapList] = useState<Map[]>([]);
   const [allMapsData, setAllMapsData] = useState<Record<string, { nodes: Node[]; edges: Edge[] }>>({});
   const [isLoading, setIsLoading] = useState(true);
-
-  // 별 배경 랜덤 생성
-  const stars = useMemo(() => {
-    const count = Math.floor(Math.random() * 6) + 10; // 10~15개
-    return Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: Math.random() * SCREEN_WIDTH,
-      y: Math.random() * SCREEN_HEIGHT,
-      size: Math.random() * 1 + 2, // 2~3px
-      opacity: Math.random() * 0.4 + 0.3, // 0.3~0.7
-    }));
-  }, []);
 
   // State
   const [selectedMapId, setSelectedMapId] = useState<string>('');
@@ -95,6 +93,18 @@ function MapCanvasContent() {
   const [sourceNodeForRecommendation, setSourceNodeForRecommendation] = useState<string | null>(null); // 추천 기준 노드 ID
   const [isPendingMode, setIsPendingMode] = useState(false); // 임시노드 확인 모드
 
+  // 별 배경 랜덤 생성 (개선: 더 많은 별, 다양한 크기와 투명도)
+  const stars = useMemo(() => {
+    const count = 25;
+    return Array.from({ length: count }, (_, i) => ({
+      id: i,
+      x: Math.random() * SCREEN_WIDTH,
+      y: Math.random() * SCREEN_HEIGHT,
+      size: Math.random() * 2 + 1, // 1~3px
+      opacity: Math.random() * 0.6 + 0.2, // 0.2~0.8
+    }));
+  }, []);
+
   // Reanimated shared values
   const scale = useSharedValue(1);
   const translateX = useSharedValue(0);
@@ -102,6 +112,76 @@ function MapCanvasContent() {
   const savedScale = useSharedValue(1);
   const savedTranslateX = useSharedValue(0);
   const savedTranslateY = useSharedValue(0);
+
+  // 별 레이어 시차 효과 (Pan 이동과 미세한 offset) - SharedValue 이후 선언
+  const starsAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value * 0.02 },
+      { translateY: translateY.value * 0.02 },
+    ],
+  }));
+
+  // 그라디언트 블렌딩 - Pan 방향에 따라 각 팔레트의 opacity 조절
+  const gradientOpacities = useDerivedValue(() => {
+    'worklet';
+    const PAN_THRESHOLD = 300;
+
+    // X, Y 축 정규화 (-1 ~ 1)
+    const normalizedX = Math.max(-1, Math.min(1, translateX.value / PAN_THRESHOLD));
+    const normalizedY = Math.max(-1, Math.min(1, translateY.value / PAN_THRESHOLD));
+
+    // 각 방향별 opacity 계산 (0 ~ 1)
+    const leftOpacity = Math.max(0, -normalizedX);   // 왼쪽 드래그 시
+    const rightOpacity = Math.max(0, normalizedX);   // 오른쪽 드래그 시
+    const upOpacity = Math.max(0, -normalizedY);     // 위 드래그 시
+    const downOpacity = Math.max(0, normalizedY);    // 아래 드래그 시
+
+    // CENTER는 항상 기본 배경으로 표시 (다른 레이어들이 위에 겹침)
+    return {
+      left: leftOpacity,
+      right: rightOpacity,
+      up: upOpacity,
+      down: downOpacity,
+    };
+  });
+
+  // 각 그라디언트 레이어의 opacity 스타일
+  const leftGradientStyle = useAnimatedStyle(() => ({
+    opacity: gradientOpacities.value.left,
+  }));
+  const rightGradientStyle = useAnimatedStyle(() => ({
+    opacity: gradientOpacities.value.right,
+  }));
+  const upGradientStyle = useAnimatedStyle(() => ({
+    opacity: gradientOpacities.value.up,
+  }));
+  const downGradientStyle = useAnimatedStyle(() => ({
+    opacity: gradientOpacities.value.down,
+  }));
+
+  // 공통 경고 함수: pending 모드에서 차단된 동작 시도 시
+  const showPendingWarning = (onConfirm: () => void) => {
+    Alert.alert(
+      '추천 선택 미완료',
+      '추천을 종료하시겠습니까?\n아직 선택이 저장되지 않았습니다.',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '추천 종료',
+          style: 'destructive',
+          onPress: () => {
+            // pending 상태 초기화
+            setPendingNodes([]);
+            setPendingEdges([]);
+            setIsPendingMode(false);
+            setSourceNodeForRecommendation(null);
+            // 확인 후 요청한 동작 수행
+            onConfirm();
+          },
+        },
+      ]
+    );
+  };
 
   // API 호출 함수
   const loadMapList = async () => {
@@ -136,6 +216,10 @@ function MapCanvasContent() {
   const loadMapDetail = async (mapId: string) => {
     try {
       const res = await mapsAPI.getDetail(mapId);
+
+      // [DEBUG] image_url 확인
+      console.log('[loadMapDetail] nodes image_url:', res.data.nodes.map(n => ({ title: n.title, image_url: n.image_url })));
+
       setAllMapsData(prev => ({ ...prev, [mapId]: { nodes: res.data.nodes, edges: res.data.edges } }));
     } catch (err: any) {
       setMapLoadError(`지도를 불러올 수 없습니다 (ID: ${mapId})`);
@@ -194,6 +278,24 @@ function MapCanvasContent() {
     loadMapList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 탭 전환 시 pending 모드 경고
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', (e: any) => {
+      if (isPendingMode) {
+        e.preventDefault();
+        showPendingWarning(() => {
+          setPendingNodes([]);
+          setPendingEdges([]);
+          setIsPendingMode(false);
+          setSourceNodeForRecommendation(null);
+          navigation.dispatch(e.data.action);
+        });
+      }
+    });
+    return unsubscribe;
+  }, [navigation, isPendingMode]);
+
 
   // selectedMapId 변경 시 맵 상세 데이터 로드
   useEffect(() => {
@@ -299,6 +401,28 @@ function MapCanvasContent() {
 
   // pill 탭 시 해당 클러스터로 fly
   const handlePillPress = (mapId: string) => {
+    if (isPendingMode) {
+      showPendingWarning(() => {
+        setPendingNodes([]);
+        setPendingEdges([]);
+        setIsPendingMode(false);
+        setSourceNodeForRecommendation(null);
+        setSelectedMapId(mapId);
+        const idx = mapList.findIndex(m => m.id === mapId);
+        if (idx === -1) return;
+        const center = getClusterCenter(idx, mapList.length);
+        translateX.value = withSpring(SCREEN_WIDTH / 2 - center.x, { damping: 20, stiffness: 90 });
+        translateY.value = withSpring(SCREEN_HEIGHT / 2 - center.y, { damping: 20, stiffness: 90 });
+        scale.value = withSpring(1, { damping: 20, stiffness: 90 });
+      });
+      return;
+    }
+
+    // isPendingMode 아닐 때: 혹시 남아있을 수 있는 상태 초기화 후 전환
+    setPendingNodes([]);
+    setPendingEdges([]);
+    setIsPendingMode(false);
+    setSourceNodeForRecommendation(null);
     setSelectedMapId(mapId);
     const idx = mapList.findIndex(m => m.id === mapId);
     if (idx === -1) return;
@@ -312,10 +436,20 @@ function MapCanvasContent() {
   const handleNodePress = (id: string) => {
     // confirmed 노드와 pending 노드 모두에서 검색
     const node = selectedMapNodes.find((n) => n.id === id);
-    if (node) {
-      setSelectedNode(node);
-      setIsSheetVisible(true);
+    if (!node) return;
+
+    // isPendingMode일 때 pending 노드가 아닌 노드 클릭 시 경고
+    if (isPendingMode && node.nodeStatus !== 'pending') {
+      showPendingWarning(() => {
+        setSelectedNode(node);
+        setIsSheetVisible(true);
+      });
+      return;
     }
+
+    // 기존 로직 유지
+    setSelectedNode(node);
+    setIsSheetVisible(true);
   };
 
   // NodeDetailSheet 닫기
@@ -355,17 +489,27 @@ function MapCanvasContent() {
       console.log('[추천 요청]', JSON.stringify(reqBody));
       const res = await recommendationAPI.get(reqBody);
 
+      console.log('[추천 응답 원본]', JSON.stringify(res.data.recommendations));
+
       const recommendationsObj = res.data.recommendations || {};
 
-      // 2. 모든 도메인의 추천 아이템을 flat하게 합침 (최대 3개)
-      const allRecommendations: Array<AIRecommendationItem & { domain: string }> = [];
-      Object.entries(recommendationsObj).forEach(([domain, items]) => {
-        (items as AIRecommendationItem[]).forEach(item => {
-          allRecommendations.push({ ...item, domain });
-        });
-      });
+      // 2. 각 도메인에서 1개씩 round-robin으로 선택 (최대 3개)
+      const domainKeys = Object.keys(recommendationsObj);
+      const topRecommendations: Array<AIRecommendationItem & { domain: string }> = [];
 
-      const topRecommendations = allRecommendations.slice(0, 3);
+      // 각 도메인에서 1개씩 선택 (최대 3개)
+      for (let i = 0; topRecommendations.length < 3 && i < 10; i++) {
+        for (const domain of domainKeys) {
+          if (topRecommendations.length >= 3) break;
+          const items = recommendationsObj[domain] as AIRecommendationItem[];
+          if (items && items[i]) {
+            topRecommendations.push({ ...items[i], domain });
+          }
+        }
+      }
+
+      // [DEBUG] image_url 확인
+      console.log('[추천 image_url 확인]', topRecommendations.map(r => ({ title: r.title, image_url: r.image_url })));
 
       // 3. pending 노드 생성
       // 기준 노드(source)의 좌표 가져오기 - selectedMapNodes(layoutNodes)에서 찾기
@@ -377,7 +521,7 @@ function MapCanvasContent() {
       const sourceX = sourceNode.x;
       const sourceY = sourceNode.y;
       const NODE_SPACING = 200; // 노드 간 간격 (기존 150 → 200으로 확대)
-      const COLLISION_RADIUS = 80; // 충돌 감지 반경
+      const COLLISION_RADIUS = 100; // 충돌 감지 반경 (80 → 100으로 증가)
 
       // 충돌 감지 함수: 주어진 좌표가 기존 노드와 겹치는지 확인
       const isOverlapping = (x: number, y: number, existingNodes: Array<{ x?: number; y?: number }>, radius: number = COLLISION_RADIUS): boolean => {
@@ -388,24 +532,49 @@ function MapCanvasContent() {
         });
       };
 
-      // pending 노드 초기 위치 계산 (아래 방향 고정)
-      // 노드 1: 왼쪽 하단 (x - 간격, y + 간격)
-      // 노드 2: 중앙 하단 (x, y + 간격)
-      // 노드 3: 오른쪽 하단 (x + 간격, y + 간격)
-      const initialPositions = [
-        { x: sourceX - NODE_SPACING, y: sourceY + NODE_SPACING }, // 왼쪽
-        { x: sourceX, y: sourceY + NODE_SPACING },                // 중앙
-        { x: sourceX + NODE_SPACING, y: sourceY + NODE_SPACING }, // 오른쪽
-      ];
+      // [수정] 같은 부모의 기존 자식 노드들 찾기
+      const childEdges = selectedMapEdges.filter(
+        e => e.source_node_id === nodeId
+      );
+      const childNodeIds = childEdges.map(e => e.target_node_id);
+      const existingChildren = selectedMapNodes.filter(
+        n => childNodeIds.includes(n.id) && n.nodeStatus === 'confirmed'
+      );
+
+      console.log('[추천] 기존 자식 노드:', existingChildren.length, '개');
+
+      // [수정] pending 노드 초기 위치 계산
+      let initialPositions: Array<{ x: number; y: number }>;
+
+      if (existingChildren.length > 0) {
+        // 기존 자식이 있는 경우: 기존 자식들과 함께 균등 배치
+        const existingCount = existingChildren.length;
+        const totalCount = existingCount + 3; // 기존 자식 + 새 pending 3개
+        const totalWidth = (totalCount - 1) * NODE_SPACING;
+        const startX = sourceX - totalWidth / 2;
+
+        // 새 pending 노드는 기존 자식 다음 위치부터 배치
+        initialPositions = [0, 1, 2].map(i => ({
+          x: startX + (existingCount + i) * NODE_SPACING,
+          y: sourceY + NODE_SPACING,
+        }));
+      } else {
+        // 기존 자식이 없는 경우: 기존 로직 유지 (좌/중/우)
+        initialPositions = [
+          { x: sourceX - NODE_SPACING, y: sourceY + NODE_SPACING }, // 왼쪽
+          { x: sourceX, y: sourceY + NODE_SPACING },                // 중앙
+          { x: sourceX + NODE_SPACING, y: sourceY + NODE_SPACING }, // 오른쪽
+        ];
+      }
 
       // 기존 confirmed 노드들만 가져오기 (pending 노드 제외)
       const confirmedNodesOnly = selectedMapNodes.filter(n => n.nodeStatus === 'confirmed');
 
-      // 충돌 방지: 기존 노드와 겹치면 y값 추가로 내리기 (최대 3회 재시도)
+      // [수정] 충돌 방지: 기존 노드와 겹치면 y값 추가로 내리기 (재시도 10회로 증가)
       const pendingPositions = initialPositions.map(pos => {
         let adjustedY = pos.y;
         let retries = 0;
-        const maxRetries = 3;
+        const maxRetries = 10; // 3 → 10으로 증가
 
         while (retries < maxRetries && isOverlapping(pos.x, adjustedY, confirmedNodesOnly)) {
           adjustedY += NODE_SPACING;
@@ -431,7 +600,7 @@ function MapCanvasContent() {
         y: pendingPositions[index].y,
         nodeStatus: 'pending',
         external_id: null,
-        image_url: null,
+        image_url: rec.image_url || null,
         reason: rec.connection_keyword,
       }));
 
@@ -473,6 +642,11 @@ function MapCanvasContent() {
     setSelectedNode(null);
 
     try {
+      // [DEBUG] 저장 전 pending 노드 데이터 확인
+      console.log('[AddToJourney] image_url:', pendingNode.image_url);
+      console.log('[AddToJourney] emotion_tags:', pendingNode.emotion_tags);
+      console.log('[AddToJourney] metadata:', JSON.stringify(pendingNode.metadata));
+
       // 1. 노드 추가 API 호출
       const nodeRes = await nodesAPI.add(selectedMapId, {
         title: pendingNode.title,
@@ -572,22 +746,69 @@ function MapCanvasContent() {
 
   return (
     <View style={styles.container}>
-        {/* 별 배경 */}
-        {stars.map((star) => (
-          <View
-            key={star.id}
-            style={[
-              styles.star,
-              {
-                left: star.x,
-                top: star.y,
-                width: star.size,
-                height: star.size,
-                opacity: star.opacity,
-              },
-            ]}
+        {/* 우주 그라디언트 배경 - 레이어드 블렌딩 */}
+        {/* 기본 CENTER 팔레트 */}
+        <LinearGradient
+          colors={GRADIENT_PALETTES.CENTER as [string, string, string]}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0.2, y: 0 }}
+          end={{ x: 0.8, y: 1 }}
+        />
+        {/* LEFT 팔레트 (왼쪽 드래그 시 표시) */}
+        <Animated.View style={[StyleSheet.absoluteFill, leftGradientStyle]}>
+          <LinearGradient
+            colors={GRADIENT_PALETTES.LEFT as [string, string, string]}
+            style={StyleSheet.absoluteFill}
+            start={{ x: 0.2, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
           />
-        ))}
+        </Animated.View>
+        {/* RIGHT 팔레트 (오른쪽 드래그 시 표시) */}
+        <Animated.View style={[StyleSheet.absoluteFill, rightGradientStyle]}>
+          <LinearGradient
+            colors={GRADIENT_PALETTES.RIGHT as [string, string, string]}
+            style={StyleSheet.absoluteFill}
+            start={{ x: 0.2, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+          />
+        </Animated.View>
+        {/* UP 팔레트 (위 드래그 시 표시) */}
+        <Animated.View style={[StyleSheet.absoluteFill, upGradientStyle]}>
+          <LinearGradient
+            colors={GRADIENT_PALETTES.UP as [string, string, string]}
+            style={StyleSheet.absoluteFill}
+            start={{ x: 0.2, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+          />
+        </Animated.View>
+        {/* DOWN 팔레트 (아래 드래그 시 표시) */}
+        <Animated.View style={[StyleSheet.absoluteFill, downGradientStyle]}>
+          <LinearGradient
+            colors={GRADIENT_PALETTES.DOWN as [string, string, string]}
+            style={StyleSheet.absoluteFill}
+            start={{ x: 0.2, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+          />
+        </Animated.View>
+
+        {/* 별 배경 (시차 효과) */}
+        <Animated.View style={[StyleSheet.absoluteFill, starsAnimatedStyle]}>
+          {stars.map((star) => (
+            <View
+              key={star.id}
+              style={[
+                styles.star,
+                {
+                  left: star.x,
+                  top: star.y,
+                  width: star.size,
+                  height: star.size,
+                  opacity: star.opacity,
+                },
+              ]}
+            />
+          ))}
+        </Animated.View>
 
         {/* 제스처 캔버스 */}
         <GestureDetector gesture={composedGesture}>
@@ -747,6 +968,8 @@ function MapCanvasContent() {
           nodeStatus={selectedNode?.nodeStatus || 'confirmed'}
           onContinueObsession={handleContinueObsession}
           onAddToJourney={handleAddToJourney}
+          isPendingMode={isPendingMode}
+          onPendingWarning={showPendingWarning}
         />
       </View>
   );
@@ -755,7 +978,6 @@ function MapCanvasContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.deepSpace,
   },
   centerContent: {
     justifyContent: 'center',
@@ -841,7 +1063,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.accent.pulsar,
-    backgroundColor: 'transparent',
+    backgroundColor: Colors.ui.transparent,
   },
   pillSelected: {
     backgroundColor: Colors.accent.pulsar,
@@ -875,7 +1097,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 20,
-    shadowColor: '#000',
+    shadowColor: Colors.ui.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -893,7 +1115,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: Colors.background.overlayDark,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,

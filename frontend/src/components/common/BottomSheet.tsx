@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Colors } from "../../constants/colors";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.75;
@@ -84,14 +85,14 @@ export default function BottomSheet({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    backgroundColor: Colors.background.overlay,
     justifyContent: "flex-end",
   },
   sheetContainer: {
     maxHeight: SHEET_MAX_HEIGHT,
   },
   sheet: {
-    backgroundColor: "#151D30",
+    backgroundColor: Colors.background.elevated,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 24,
@@ -99,7 +100,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: "#3A4458",
+    backgroundColor: Colors.ui.divider,
     borderRadius: 2,
     alignSelf: "center",
     marginTop: 12,
@@ -109,12 +110,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
+    borderBottomColor: Colors.background.input,
   },
   title: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     textAlign: "center",
   },
   content: {

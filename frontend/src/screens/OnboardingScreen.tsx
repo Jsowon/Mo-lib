@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    backgroundColor: "rgba(28, 26, 46, 0.85)",
+    backgroundColor: Colors.background.dimmed,
     borderRadius: 14,
     padding: 20,
     borderWidth: 1,
@@ -249,13 +249,13 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: "100%",
     height: 240,
-    backgroundColor: "rgba(232, 230, 248, 0.15)",
+    backgroundColor: Colors.accent.subtle,
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 32,
     borderWidth: 1,
-    borderColor: "rgba(232, 230, 248, 0.1)",
+    borderColor: Colors.border.subtle,
   },
   imagePlaceholderText: {
     color: Colors.text.dusk,

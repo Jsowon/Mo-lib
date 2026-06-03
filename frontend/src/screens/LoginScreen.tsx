@@ -15,6 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { authAPI } from "../api/endpoints";
 import { useAuthStore } from "../store/authStore";
+import { Colors } from "../constants/colors";
 
 type AuthStackParamList = {
   Onboarding: undefined;
@@ -93,7 +94,7 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="your@email.com"
-                placeholderTextColor="#555577"
+                placeholderTextColor={Colors.text.muted}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -108,7 +109,7 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="비밀번호를 입력하세요"
-                placeholderTextColor="#555577"
+                placeholderTextColor={Colors.text.muted}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -144,7 +145,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#080714",
+    backgroundColor: Colors.background.void,
   },
   safeArea: {
     flex: 1,
@@ -161,12 +162,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 36,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 15,
-    color: "#AAAACC",
+    color: Colors.text.moonmist,
   },
   form: {
     gap: 28,
@@ -177,20 +178,20 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    color: "#AAAACC",
+    color: Colors.text.moonmist,
   },
   input: {
     fontSize: 16,
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     paddingVertical: 8,
     paddingHorizontal: 0,
   },
   inputLine: {
     height: 1,
-    backgroundColor: "#333355",
+    backgroundColor: Colors.ui.inactive,
   },
   button: {
-    backgroundColor: "#7B6FD4",
+    backgroundColor: Colors.accent.pulsar,
     borderRadius: 30,
     paddingVertical: 18,
     alignItems: "center",
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     fontSize: 17,
     fontWeight: "700",
   },
@@ -210,11 +211,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   linkText: {
-    color: "#AAAACC",
+    color: Colors.text.moonmist,
     fontSize: 14,
   },
   link: {
-    color: "#9B8FFF",
+    color: Colors.text.link,
     fontSize: 14,
     fontWeight: "600",
   },
