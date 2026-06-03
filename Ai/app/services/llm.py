@@ -47,7 +47,7 @@ def call_with_grounding_fallback(contents: list) -> tuple[object, bool]:
 def build_stage1_input(domain: str, metadata: dict) -> str:
     base = {"domain": domain, "title": metadata.get("title", "")}
 
-    if domain == "film":
+    if domain == "movie":
         base.update({
             "genre": metadata.get("genre", ""),
             "synopsis": metadata.get("synopsis", ""),

@@ -14,6 +14,6 @@ STAGE2_CLIENT = _CLIENT
 STAGE2_MODEL = "gemini-2.5-flash-lite"
 
 GOOGLE_SEARCH_TOOL = types.Tool(google_search=types.GoogleSearch())
-ALL_DOMAINS = {"film", "book", "music"}
+ALL_DOMAINS = {"movie", "book", "music"}
 
 MAX_HISTORY_ITEMS = 8

@@ -1,5 +1,5 @@
 # 도메인별 프롬프트 <입력 데이터 분석>
-STAGE1_PROMPT_FILM = (
+STAGE1_PROMPT_MOVIE = (
     "너는 영화 콘텐츠의 서사적·맥락적 정보를 추출하는 분석기다.\n"
     "입력된 영화 메타데이터(genre, synopsis, director, year)를 분석하여 아래 JSON 형식으로만 응답하라.\n\n"
     "[분석 지침]\n"
@@ -54,7 +54,7 @@ STAGE1_PROMPT_MUSIC = (
 )
 
 _PROMPT_MAP = {
-    "film": STAGE1_PROMPT_FILM,
+    "movie": STAGE1_PROMPT_MOVIE,
     "book": STAGE1_PROMPT_BOOK,
     "music": STAGE1_PROMPT_MUSIC,
 }
