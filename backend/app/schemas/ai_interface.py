@@ -64,6 +64,7 @@ class AIRecommendationItem(BaseModel):
     reason: str
     tags: list[str]
     connection_keyword: str  # 노드 간 연결 키워드 (한 단어)
+    image_url: Optional[str] = None
 
 
 class AIRecommendationResponse(BaseModel):
