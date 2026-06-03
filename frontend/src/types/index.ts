@@ -79,6 +79,7 @@ export interface AIRecommendationItem {
   reason: string;
   tags: string[];
   connection_keyword: string;
+  image_url?: string | null;
 }
 
 export interface RecommendationResponse {
@@ -98,7 +99,7 @@ export interface SearchContentItem {
   keywords: string[];
   thumbnail_url: string[];
   image_url?: string | null;  // 백엔드 신규 필드
-  external_id?: string | null;
+  external_id: string | null;  // 백엔드가 항상 내려주는 필드 (optional 제거)
 }
 
 export interface SearchResponse {

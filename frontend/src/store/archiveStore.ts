@@ -69,6 +69,10 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
         page: 1,
         size: PAGE_SIZE,
       });
+
+      // [DEBUG] image_url 확인
+      console.log('[Archive nodes image_url]', res.data.nodes.map(n => ({ title: n.title, image_url: n.image_url })));
+
       set({
         nodes: res.data.nodes,
         total: res.data.total,

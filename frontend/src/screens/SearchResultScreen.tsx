@@ -22,6 +22,7 @@ import { searchAPI, mapsAPI, nodesAPI } from "../api/endpoints";
 import { ContentItem, Domain, SearchContentItem } from "../types";
 import { HomeStackParamList, RootTabParamList } from "../navigation/types";
 import ContentDetailSheet from "../components/common/ContentDetailSheet";
+import { Colors } from "../constants/colors";
 
 // ── 네비게이션 타입 ───────────────────────────────────────────────────────────
 type RoutePropType = RouteProp<HomeStackParamList, "SearchResult">;
@@ -44,9 +45,9 @@ const DOMAIN_PLACEHOLDER: Record<Domain, string> = {
 };
 
 const DOMAIN_COLOR: Record<Domain, string> = {
-  movie: "#E05C6E",
-  book: "#5CA8E0",
-  music: "#7C5CE0",
+  movie: Colors.domain.movie,
+  book: Colors.domain.book,
+  music: Colors.domain.music,
 };
 
 // ── 헬퍼 함수 ─────────────────────────────────────────────────────────────────
@@ -190,22 +191,30 @@ export default function SearchResultScreen() {
           throw new Error('지원하지 않는 도메인입니다.');
         }
 
+        // [DEBUG] 백엔드 응답 원본 확인
+        if (res.data.results.length > 0) {
+          console.log('[Search Raw Response - First Item]', JSON.stringify(res.data.results[0], null, 2));
+        }
+
         // SearchResponse → ContentItem[] 매핑
-        const mapped: ContentItem[] = res.data.results.map((item: SearchContentItem) => ({
-          external_id: item.external_id || item.title,
-          domain: ((item.domain === 'film' ? 'movie' : item.domain) as Domain),
-          title: item.title,
-          description: item.description,
-          image_url: item.image_url || item.thumbnail_url?.[0] || null,
-          year: null,
-          country: null,
-          metadata: {
-            genres: item.genre,
-            director: item.domain === 'movie' ? item.creator : undefined,
-            author: item.domain === 'book' ? item.creator : undefined,
-            artist: item.domain === 'music' ? item.creator : undefined,
-          },
-        }));
+        const mapped: ContentItem[] = res.data.results.map((item: SearchContentItem) => {
+          console.log(`[Mapping] title="${item.title}", external_id="${item.external_id}"`);
+          return {
+            external_id: item.external_id || item.title,  // 백엔드가 정상 제공, 폴백은 방어적 유지
+            domain: (item.domain as Domain),  // 백엔드가 'movie' 직접 반환
+            title: item.title,
+            description: item.description,
+            image_url: item.image_url || item.thumbnail_url?.[0] || null,
+            year: null,
+            country: null,
+            metadata: {
+              genres: item.genre,
+              director: item.domain === 'movie' ? item.creator : undefined,
+              author: item.domain === 'book' ? item.creator : undefined,
+              artist: item.domain === 'music' ? item.creator : undefined,
+            },
+          };
+        });
 
         setResults(mapped);
         setTotal(res.data.total ?? 0);
@@ -243,28 +252,83 @@ export default function SearchResultScreen() {
   };
 
   // ── 지도 생성 + 루트노드 추가 플로우 ──────────────────────────────────────
+  // 실제 지도 생성 로직 (중복 체크 없이 무조건 생성)
+  const createNewMapAndNode = async (item: ContentItem) => {
+    // 지도 생성
+    const mapRes = await mapsAPI.create({ title: item.title });
+    const mapId = mapRes.data.id;
+
+    // [DEBUG] 노드 추가 요청 페이로드 확인
+    const nodePayload = {
+      title: item.title,
+      domain: item.domain,
+      step_order: 0,
+      is_root: true,
+      description: item.description,
+      image_url: item.image_url,
+      external_id: item.external_id || item.title,  // 백엔드가 정상 제공, 폴백은 방어적 유지
+      emotion_tags: [],
+      metadata: item.metadata as Record<string, unknown>,
+    };
+    console.log('[Node Add Payload]', JSON.stringify(nodePayload, null, 2));
+
+    // 루트노드 추가
+    await nodesAPI.add(mapId, nodePayload);
+
+    // Map 탭으로 이동
+    navigation.navigate("Map", { mapId });
+  };
+
+  // 중복 체크 + 지도 생성
   const createMapAndNode = async (item: ContentItem) => {
     setIsCreating(true);
     try {
-      // 1. 지도 생성
-      const mapRes = await mapsAPI.create({ title: item.title });
-      const mapId = mapRes.data.id;
+      // 1. 기존 지도 목록 조회
+      const mapsRes = await mapsAPI.getList();
+      const existingMaps = mapsRes.data.maps || [];
 
-      // 2. 루트노드 추가
-      await nodesAPI.add(mapId, {
-        title: item.title,
-        domain: item.domain,
-        step_order: 0,
-        is_root: true,
-        description: item.description,
-        image_url: item.image_url,
-        external_id: item.external_id || item.title,
-        emotion_tags: [],
-        metadata: item.metadata as Record<string, unknown>,
-      });
+      // 2. 같은 title의 지도 있는지 확인
+      const duplicateMap = existingMaps.find(
+        (m) => m.title === item.title
+      );
 
-      // 3. Map 탭으로 이동
-      navigation.navigate("Map", { mapId });
+      if (duplicateMap) {
+        // 3. 중복 발견 시 경고 모달
+        setIsCreating(false);
+        Alert.alert(
+          '이미 존재하는 지도',
+          `"${item.title}" 지도가 이미 있어요.\n기존 지도로 이동할까요?`,
+          [
+            {
+              text: '새로 만들기',
+              onPress: async () => {
+                setIsCreating(true);
+                try {
+                  await createNewMapAndNode(item);
+                } catch (err: any) {
+                  Alert.alert(
+                    "오류",
+                    err.message || "지도 생성 중 오류가 발생했어요. 다시 시도해 주세요."
+                  );
+                } finally {
+                  setIsCreating(false);
+                }
+              },
+            },
+            {
+              text: '기존 지도로 이동',
+              style: 'default',
+              onPress: () => {
+                navigation.navigate('Map', { mapId: duplicateMap.id });
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // 4. 중복 없으면 새 지도 생성
+      await createNewMapAndNode(item);
     } catch (err: any) {
       Alert.alert(
         "오류",
@@ -311,7 +375,7 @@ export default function SearchResultScreen() {
         <TextInput
           style={styles.searchInput}
           placeholder={DOMAIN_PLACEHOLDER[domainTyped]}
-          placeholderTextColor="#4A5568"
+          placeholderTextColor={Colors.text.placeholder}
           value={searchText}
           onChangeText={setSearchText}
           returnKeyType="search"
@@ -332,7 +396,7 @@ export default function SearchResultScreen() {
 
       {/* 리스트 / 로딩 / 에러 / 빈 결과 */}
       {loading ? (
-        <ActivityIndicator color="#D97BA0" size="large" style={styles.loader} />
+        <ActivityIndicator color={Colors.accent.primaryLight} size="large" style={styles.loader} />
       ) : error ? (
         <View style={styles.centerBox}>
           <Text style={styles.errorText}>{error}</Text>
@@ -438,7 +502,7 @@ export default function SearchResultScreen() {
       {isCreating && (
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingBox}>
-            <ActivityIndicator color="#D97BA0" size="large" />
+            <ActivityIndicator color={Colors.accent.primaryLight} size="large" />
             <Text style={styles.loadingOverlayText}>지도를 생성하는 중...</Text>
           </View>
         </View>
@@ -451,7 +515,7 @@ export default function SearchResultScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0A0E1A",
+    backgroundColor: Colors.background.void,
   },
 
   // 헤더
@@ -467,7 +531,7 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: 22,
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
   headerTitleRow: {
     flexDirection: "row",
@@ -482,7 +546,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     flex: 1,
   },
 
@@ -490,7 +554,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#151D30",
+    backgroundColor: Colors.background.elevated,
     borderRadius: 12,
     marginHorizontal: 16,
     paddingHorizontal: 14,
@@ -506,18 +570,18 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
 
   // 결과 수
   countText: {
     fontSize: 13,
-    color: "#8899BB",
+    color: Colors.text.secondary,
     marginHorizontal: 20,
     marginBottom: 12,
   },
   countHighlight: {
-    color: "#D97BA0",
+    color: Colors.accent.primaryLight,
     fontWeight: "700",
   },
 
@@ -540,28 +604,28 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 15,
-    color: "#4A5568",
+    color: Colors.text.placeholder,
   },
   errorText: {
     fontSize: 14,
-    color: "#E05C6E",
+    color: Colors.semantic.errorBorder,
     textAlign: "center",
   },
   retryBtn: {
     paddingHorizontal: 24,
     paddingVertical: 10,
-    backgroundColor: "#1E293B",
+    backgroundColor: Colors.background.input,
     borderRadius: 10,
   },
   retryText: {
-    color: "#D97BA0",
+    color: Colors.accent.primaryLight,
     fontWeight: "600",
   },
 
   // 결과 카드
   card: {
     flexDirection: "row",
-    backgroundColor: "#141B2D",
+    backgroundColor: Colors.background.modal,
     borderRadius: 14,
     overflow: "hidden",
     gap: 12,
@@ -594,12 +658,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     lineHeight: 21,
   },
   cardSubtitle: {
     fontSize: 12,
-    color: "#6B7A99",
+    color: Colors.text.tertiary,
   },
   metaList: {
     marginTop: 4,
@@ -607,23 +671,23 @@ const styles = StyleSheet.create({
   },
   metaItem: {
     fontSize: 12,
-    color: "#8899BB",
+    color: Colors.text.secondary,
   },
   metaIcon: {
-    color: "#4A5A7A",
+    color: Colors.text.disabled,
   },
   metaIconStar: {
-    color: "#F4C430",
+    color: Colors.semantic.star,
   },
 
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
+    backgroundColor: Colors.background.overlayDark,
     justifyContent: "flex-end",
   },
   modalBox: {
-    backgroundColor: "#151D30",
+    backgroundColor: Colors.background.elevated,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 20,
@@ -634,12 +698,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     marginBottom: 2,
   },
   modalSubtitle: {
     fontSize: 13,
-    color: "#6B7A99",
+    color: Colors.text.tertiary,
     marginBottom: 16,
   },
   modalItem: {
@@ -648,7 +712,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: "#1E293B",
+    borderTopColor: Colors.background.input,
   },
   modalItemThumb: {
     width: 44,
@@ -662,23 +726,23 @@ const styles = StyleSheet.create({
   modalItemTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
   modalItemMeta: {
     fontSize: 12,
-    color: "#6B7A99",
+    color: Colors.text.tertiary,
   },
   modalCancelBtn: {
     marginTop: 12,
     alignItems: "center",
     paddingVertical: 14,
-    backgroundColor: "#1E293B",
+    backgroundColor: Colors.background.input,
     borderRadius: 12,
   },
   modalCancelText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#8899BB",
+    color: Colors.text.secondary,
   },
 
   // 로딩 오버레이
@@ -688,13 +752,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: Colors.background.overlayHeavy,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 999,
   },
   loadingBox: {
-    backgroundColor: "#151D30",
+    backgroundColor: Colors.background.elevated,
     borderRadius: 16,
     paddingHorizontal: 32,
     paddingVertical: 24,
@@ -703,7 +767,7 @@ const styles = StyleSheet.create({
   },
   loadingOverlayText: {
     fontSize: 14,
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     fontWeight: "600",
   },
 });

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { Image, View } from 'react-native';
 
 import { useAuthStore } from '../store/authStore';
+import { Colors } from '../constants/colors';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -37,7 +38,7 @@ function TabIcon({ name, focused }: { name: keyof typeof TAB_ICONS; focused: boo
       width: 44,
       height: 44,
       borderRadius: 22,
-      backgroundColor: focused ? 'rgba(192, 132, 160, 0.25)' : 'transparent',
+      backgroundColor: focused ? Colors.accent.subtle : Colors.ui.transparent,
       alignItems: 'center',
       justifyContent: 'center',
     }}>
@@ -66,14 +67,14 @@ function MainTab() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#1E293B',
+          backgroundColor: Colors.background.input,
           borderTopWidth: 0,
           height: 64,
           paddingBottom: 8,
           paddingTop: 8,
         },
-        tabBarActiveTintColor: '#C084A0',
-        tabBarInactiveTintColor: '#6B7A99',
+        tabBarActiveTintColor: Colors.accent.primary,
+        tabBarInactiveTintColor: Colors.text.tertiary,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',

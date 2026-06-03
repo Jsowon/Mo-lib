@@ -27,9 +27,9 @@ const DOMAIN_ICON_IMAGES = {
 };
 
 const DOMAIN_COLORS: Record<'movie' | 'music' | 'book', string> = {
-  movie: '#E05C6E',
-  book: '#5CA8E0',
-  music: '#7C5CE0',
+  movie: Colors.domain.movie,
+  book: Colors.domain.book,
+  music: Colors.domain.music,
 };
 
 export default function NodeCircle({
@@ -41,8 +41,8 @@ export default function NodeCircle({
   isPending = false,
   onPress,
 }: NodeCircleProps) {
-  // 백엔드가 "film"을 반환하는 경우 "movie"로 정규화
-  const normalizedDomain = ((domain as string) === 'film' ? 'movie' : domain) as 'movie' | 'music' | 'book';
+  // 백엔드가 'movie'를 직접 반환하므로 정규화 불필요
+  const normalizedDomain = domain;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
   // 루트 노드 회전 애니메이션
@@ -173,7 +173,7 @@ export default function NodeCircle({
         <View style={[styles.node, getNodeStyle()]}>
           <Image
             source={DOMAIN_ICON_IMAGES[normalizedDomain]}
-            style={[styles.icon, { tintColor: '#FFFFFF' }]}
+            style={[styles.icon, { tintColor: Colors.text.primary }]}
             resizeMode="contain"
           />
         </View>
