@@ -2,7 +2,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useEffect } from 'react';
-import { Image, View } from 'react-native';
+import { Alert, Image, View } from 'react-native';
+import { useMapPendingStore } from '../store/mapPendingStore';
 
 import { useAuthStore } from '../store/authStore';
 import { Colors } from '../constants/colors';
@@ -64,6 +65,31 @@ function AuthNavigator() {
 function MainTab() {
   return (
     <Tab.Navigator
+      screenListeners={({ navigation }) => ({
+        tabPress: (e) => {
+          const { isPendingMode, triggerClear } = useMapPendingStore.getState();
+          if (!isPendingMode) return;
+          const state = navigation.getState();
+          const currentTab = state?.routes[state?.index]?.name;
+          if (currentTab !== 'Map') return;
+          e.preventDefault();
+          Alert.alert(
+            '추천 선택 미완료',
+            '추천을 종료하시겠습니까?\n아직 선택이 저장되지 않았습니다.',
+            [
+              { text: '취소', style: 'cancel' },
+              {
+                text: '추천 종료',
+                style: 'destructive',
+                onPress: () => {
+                  triggerClear();
+                  if (e.data?.action) navigation.dispatch(e.data.action);
+                },
+              },
+            ]
+          );
+        },
+      })}
       screenOptions={{
         headerShown: false,
         tabBarStyle: {

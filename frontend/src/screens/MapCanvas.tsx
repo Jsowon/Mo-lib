@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -31,6 +31,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import { Node, LocalNode, Edge, Domain, AIRecommendationItem, Map } from '../types';
 import { RootTabParamList, HomeStackParamList } from '../navigation/types';
 import { recommendationAPI, nodesAPI, edgesAPI, mapsAPI } from '../api/endpoints';
+import { useMapPendingStore } from '../store/mapPendingStore';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -74,6 +75,7 @@ type MapNavProp = CompositeNavigationProp<
 function MapCanvasContent() {
   const navigation = useNavigation<MapNavProp>();
   const route = useRoute<MapRouteProp>();
+  const { setIsPendingMode: setGlobalPendingMode, registerClearHandler } = useMapPendingStore();
 
   // API 데이터 상태
   const [mapList, setMapList] = useState<Map[]>([]);
@@ -159,6 +161,13 @@ function MapCanvasContent() {
     opacity: gradientOpacities.value.down,
   }));
 
+  const clearPendingState = useCallback(() => {
+    setPendingNodes([]);
+    setPendingEdges([]);
+    setIsPendingMode(false);
+    setSourceNodeForRecommendation(null);
+  }, []);
+
   // 공통 경고 함수: pending 모드에서 차단된 동작 시도 시
   const showPendingWarning = (onConfirm: () => void) => {
     Alert.alert(
@@ -169,15 +178,7 @@ function MapCanvasContent() {
         {
           text: '추천 종료',
           style: 'destructive',
-          onPress: () => {
-            // pending 상태 초기화
-            setPendingNodes([]);
-            setPendingEdges([]);
-            setIsPendingMode(false);
-            setSourceNodeForRecommendation(null);
-            // 확인 후 요청한 동작 수행
-            onConfirm();
-          },
+          onPress: onConfirm,
         },
       ]
     );
@@ -279,22 +280,16 @@ function MapCanvasContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 탭 전환 시 pending 모드 경고
+  // isPendingMode를 전역 store에 동기화 (Tab.Navigator 레벨 인터셉트용)
   useEffect(() => {
-    const unsubscribe = navigation.addListener('tabPress', (e: any) => {
-      if (isPendingMode) {
-        e.preventDefault();
-        showPendingWarning(() => {
-          setPendingNodes([]);
-          setPendingEdges([]);
-          setIsPendingMode(false);
-          setSourceNodeForRecommendation(null);
-          navigation.dispatch(e.data.action);
-        });
-      }
-    });
-    return unsubscribe;
-  }, [navigation, isPendingMode]);
+    setGlobalPendingMode(isPendingMode);
+  }, [isPendingMode, setGlobalPendingMode]);
+
+  // clearPendingState 핸들러를 store에 등록 (navigator에서 호출 가능하도록)
+  useEffect(() => {
+    registerClearHandler(clearPendingState);
+    return () => registerClearHandler(null);
+  }, [registerClearHandler, clearPendingState]);
 
 
   // selectedMapId 변경 시 맵 상세 데이터 로드
@@ -403,10 +398,7 @@ function MapCanvasContent() {
   const handlePillPress = (mapId: string) => {
     if (isPendingMode) {
       showPendingWarning(() => {
-        setPendingNodes([]);
-        setPendingEdges([]);
-        setIsPendingMode(false);
-        setSourceNodeForRecommendation(null);
+        clearPendingState();
         setSelectedMapId(mapId);
         const idx = mapList.findIndex(m => m.id === mapId);
         if (idx === -1) return;
@@ -419,10 +411,7 @@ function MapCanvasContent() {
     }
 
     // isPendingMode 아닐 때: 혹시 남아있을 수 있는 상태 초기화 후 전환
-    setPendingNodes([]);
-    setPendingEdges([]);
-    setIsPendingMode(false);
-    setSourceNodeForRecommendation(null);
+    clearPendingState();
     setSelectedMapId(mapId);
     const idx = mapList.findIndex(m => m.id === mapId);
     if (idx === -1) return;
@@ -441,6 +430,7 @@ function MapCanvasContent() {
     // isPendingMode일 때 pending 노드가 아닌 노드 클릭 시 경고
     if (isPendingMode && node.nodeStatus !== 'pending') {
       showPendingWarning(() => {
+        clearPendingState();
         setSelectedNode(node);
         setIsSheetVisible(true);
       });
@@ -669,9 +659,8 @@ function MapCanvasContent() {
         reason: pendingNode.reason || null, // connection_keyword를 reason으로 전달
       });
 
-      // 3. pending 노드 목록에서 제거
-      setPendingNodes(prev => prev.filter(n => n.id !== pendingNode.id));
-      setPendingEdges(prev => prev.filter(e => e.target_node_id !== pendingNode.id));
+      // 3. 1개 선택 완료 → 나머지 추천 노드 전부 제거하고 pending 모드 종료
+      clearPendingState();
 
       // 4. 맵 상세 데이터 리로드
       await loadMapDetail(selectedMapId);
@@ -684,10 +673,7 @@ function MapCanvasContent() {
   };
 
   const handleComplete = () => {
-    setPendingNodes([]);
-    setPendingEdges([]);
-    setIsPendingMode(false);
-    setSourceNodeForRecommendation(null);
+    clearPendingState();
   };
 
   // 줌 버튼 핸들러
