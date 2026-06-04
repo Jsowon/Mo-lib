@@ -44,6 +44,7 @@ export interface Node {
   step_order: number;
   metadata: Record<string, unknown>;
   created_at: string;
+  map_title?: string;  // 백엔드 응답에 포함 시 사용 가능 (optional)
 }
 
 // LocalNode (Node를 확장한 로컬 UI 상태 타입)
@@ -78,6 +79,7 @@ export interface AIRecommendationItem {
   reason: string;
   tags: string[];
   connection_keyword: string;
+  image_url?: string | null;
 }
 
 export interface RecommendationResponse {
@@ -96,7 +98,8 @@ export interface SearchContentItem {
   creator: string;
   keywords: string[];
   thumbnail_url: string[];
-  external_id?: string | null;
+  image_url?: string | null;  // 백엔드 신규 필드
+  external_id: string | null;  // 백엔드가 항상 내려주는 필드 (optional 제거)
 }
 
 export interface SearchResponse {

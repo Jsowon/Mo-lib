@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
@@ -6,11 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.aladin import aladin_client
 from app.core.exceptions import AIException
-from app.core.normalizer import (
-    normalize_aladin_book,
-    normalize_spotify_track,
-    normalize_tmdb_movie,
-)
 from app.core.spotify import spotify_client
 from app.core.tmdb import tmdb_client
 from app.database import get_db
@@ -25,29 +21,6 @@ from app.services.ai_service import get_ai_recommendation
 router = APIRouter(prefix="/recommendations", tags=["recommendation"])
 
 CACHE_TTL_HOURS = 24
-
-
-async def fetch_image_url(domain: str, title: str) -> str | None:
-    """추천된 title로 외부 API에서 image_url 가져오기"""
-    try:
-        if domain == "movie":
-            results = await tmdb_client.search_movies(query=title, limit=1)
-            if results:
-                item = normalize_tmdb_movie(results[0])
-                return item.thumbnail_url[0] if item.thumbnail_url else None
-        elif domain == "book":
-            results = await aladin_client.search_books(query=title, limit=1)
-            if results:
-                item = normalize_aladin_book(results[0])
-                return item.thumbnail_url[0] if item.thumbnail_url else None
-        elif domain == "music":
-            results = await spotify_client.search_tracks(query=title, limit=1)
-            if results:
-                item = normalize_spotify_track(results[0])
-                return item.thumbnail_url[0] if item.thumbnail_url else None
-    except Exception:
-        return None
-    return None
 
 
 def normalize_metadata(domain: str, metadata: dict) -> dict:
@@ -75,6 +48,28 @@ def normalize_metadata(domain: str, metadata: dict) -> dict:
     return metadata
 
 
+async def fetch_image(domain: str, title: str) -> str | None:
+    """추천 항목 제목으로 외부 API에서 이미지 URL 조회"""
+    try:
+        if domain == "movie":
+            items = await tmdb_client.search_movies(query=title, limit=1)
+            if items and items[0].get("poster_path"):
+                return f"https://image.tmdb.org/t/p/w500{items[0]['poster_path']}"
+        elif domain == "book":
+            items = await aladin_client.search_books(query=title, limit=1)
+            if items:
+                cover = items[0].get("cover", "").replace("coversum", "cover500")
+                return cover if cover else None
+        elif domain == "music":
+            items = await spotify_client.search_tracks(query=title, limit=1)
+            if items:
+                images = items[0].get("album", {}).get("images", [])
+                return images[0]["url"] if images else None
+    except Exception:
+        return None
+    return None
+
+
 def make_cache_key(content_id: str, domain: str, exclude_domains: list[str]) -> str:
     exclude_str = ",".join(sorted(exclude_domains))
     return f"{domain}:{content_id}:exclude:{exclude_str}"
@@ -84,7 +79,7 @@ def make_cache_key(content_id: str, domain: str, exclude_domains: list[str]) -> 
     "",
     response_model=RecommendationResponse,
     summary="크로스 도메인 콘텐츠 추천",
-    description="콘텐츠 정보를 입력하면 Gemini AI가 영화·음악·도서를 추천합니다. 동일 요청은 24시간 캐시됩니다.",  # noqa: E501
+    description="콘텐츠 정보를 입력하면 AI가 영화·음악·도서를 추천합니다. 동일 요청은 24시간 캐시됩니다.",  # noqa: E501
 )
 async def get_recommendation(
     request: RecommendationRequest, db: AsyncSession = Depends(get_db)
@@ -102,11 +97,10 @@ async def get_recommendation(
         now = datetime.now(timezone.utc)
         if cached.expires_at is None or cached.expires_at > now:
             return RecommendationResponse(**cached.result)
-        # 만료된 캐시 제거 후 재요청
         await db.delete(cached)
         await db.flush()
 
-    # 2. Gemini 호출
+    # 2. AI 서버 호출
     ai_request = AIRecommendationRequest(
         domain=request.domain,
         content_id=request.content_id,
@@ -123,16 +117,23 @@ async def get_recommendation(
     except Exception:
         raise AIException()
 
-    # 3. image_url 채우기
-    for domain, items in ai_response.recommendations.items():
-        for item in items:
-            if not item.image_url:
-                item.image_url = await fetch_image_url(domain, item.title)
+    # 3. 추천 항목 이미지 병렬 조회
+    flat_items = [
+        (domain, item)
+        for domain, items in ai_response.recommendations.items()
+        for item in items
+    ]
+    image_urls = await asyncio.gather(
+        *[fetch_image(domain, item.title) for domain, item in flat_items]
+    )
+    for (_, item), image_url in zip(flat_items, image_urls):
+        item.image_url = image_url
 
     # 4. 응답 구성
     response = RecommendationResponse(
         recommendations=ai_response.recommendations, map_title=ai_response.map_title
     )
+
     # 5. 캐시 저장 (24시간 TTL)
     cache = RecommendationCache(
         cache_key=cache_key,

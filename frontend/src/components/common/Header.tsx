@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useAuthStore } from "../../store/authStore";
 import { authAPI } from "../../api/endpoints";
+import { Colors } from "../../constants/colors";
 
 export default function Header() {
   const { clearAuth, nickname, email } = useAuthStore();
@@ -96,9 +97,9 @@ export default function Header() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: "#0D0B1E",
+    backgroundColor: Colors.background.header,
     borderBottomWidth: 1,
-    borderBottomColor: "#1E1C35",
+    borderBottomColor: Colors.border.default,
   },
   container: {
     height: 70,
@@ -118,17 +119,17 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: Colors.background.search,
     justifyContent: "flex-start",
     alignItems: "flex-end",
     paddingTop: 100,
     paddingRight: 16,
   },
   dropdown: {
-    backgroundColor: "#1A1830",
+    backgroundColor: Colors.background.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#2A2845",
+    borderColor: Colors.border.input,
     minWidth: 220,
     overflow: "hidden",
   },
@@ -140,12 +141,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   nicknameText: {
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     fontSize: 16,
     fontWeight: "700",
   },
   emailText: {
-    color: "#8888AA",
+    color: Colors.text.moonmist,
     fontSize: 13,
   },
 
@@ -163,14 +164,14 @@ const styles = StyleSheet.create({
     marginLeft: -10,
   },
   dropdownText: {
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     fontSize: 15,
   },
   logoutText: {
-    color: "#E05555",
+    color: Colors.semantic.error,
   },
   divider: {
     height: 1,
-    backgroundColor: "#2A2845",
+    backgroundColor: Colors.ui.hover,
   },
 });

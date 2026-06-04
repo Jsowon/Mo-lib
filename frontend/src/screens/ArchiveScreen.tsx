@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  Image,
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
@@ -16,14 +17,15 @@ import Header from "../components/common/Header";
 import { useArchiveStore } from "../store/archiveStore";
 import { Domain, Node } from "../types";
 import { RootTabParamList } from "../navigation/types";
+import { Colors } from "../constants/colors";
 
 type ArchiveNavProp = BottomTabNavigationProp<RootTabParamList>;
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 const DOMAIN_COLORS: Record<Domain, string> = {
-  movie: "#E05C6E",
-  book: "#5CA8E0",
-  music: "#7C5CE0",
+  movie: Colors.domain.movie,
+  book: Colors.domain.book,
+  music: Colors.domain.music,
 };
 
 const DOMAIN_LABELS: Record<Domain, string> = {
@@ -59,12 +61,14 @@ function ArchiveDetailSheet({
   visible,
   onClose,
   onNavigateToMap,
+  onUnarchive,
 }: {
   node: Node | null;
   mapTitle: string;
   visible: boolean;
   onClose: () => void;
   onNavigateToMap: () => void;
+  onUnarchive: () => void;
 }) {
   if (!node) return null;
 
@@ -72,58 +76,80 @@ function ArchiveDetailSheet({
   const meta = node.metadata as Record<string, unknown>;
   const year = meta?.year as string | number | undefined;
 
-  const metaParts = [
-    formatDate(node.created_at),
-    creator,
-    year ? String(year) : null,
-    DOMAIN_LABELS[node.domain],
-  ].filter(Boolean).join(" · ");
+  // 크리에이터 · 연도 구성 (도메인별 분기)
+  const creatorYearParts: string[] = [];
+  if (node.domain === "movie") {
+    if (creator) creatorYearParts.push(creator);
+    if (year) creatorYearParts.push(String(year));
+  } else if (node.domain === "music") {
+    if (creator) creatorYearParts.push(creator);
+  } else if (node.domain === "book") {
+    if (creator) creatorYearParts.push(creator);
+    if (year) creatorYearParts.push(String(year));
+  }
+  const creatorYearText = creatorYearParts.join(" · ");
+
+  // 장르 태그 (영화만)
+  const genres = node.domain === "movie" ? (meta?.genres as string[] | undefined) : undefined;
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
     >
       <Pressable style={sheetStyles.overlay} onPress={onClose}>
         <Pressable style={sheetStyles.sheet} onPress={() => {}}>
-          {/* 핸들 */}
-          <View style={sheetStyles.handle} />
+          {/* 이미지 */}
+          {node.image_url ? (
+            <Image
+              source={{ uri: node.image_url }}
+              style={sheetStyles.thumbnail}
+              resizeMode="cover"
+            />
+          ) : null}
 
-          {/* 헤더 행: 지도 배지 + 닫기 */}
-          <View style={sheetStyles.headerRow}>
+          {/* 닫기 버튼 */}
+          <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn}>
+            <Text style={sheetStyles.closeBtnText}>✕</Text>
+          </TouchableOpacity>
+
+          {/* 배지 행 */}
+          <View style={sheetStyles.badgeRow}>
             <View style={sheetStyles.mapBadge}>
               <Text style={sheetStyles.mapBadgeText} numberOfLines={1}>
                 {mapTitle}
               </Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={sheetStyles.closeBtn}>
-              <Text style={sheetStyles.closeBtnText}>✕</Text>
-            </TouchableOpacity>
+            <View style={[sheetStyles.domainBadge, { backgroundColor: DOMAIN_COLORS[node.domain] }]}>
+              <Text style={sheetStyles.domainBadgeText}>{DOMAIN_LABELS[node.domain]}</Text>
+            </View>
           </View>
 
           {/* 제목 */}
           <Text style={sheetStyles.title}>{node.title}</Text>
 
-          {/* 메타 정보 */}
-          <Text style={sheetStyles.meta}>{metaParts}</Text>
+          {/* 크리에이터 · 연도 */}
+          {creatorYearText ? (
+            <Text style={sheetStyles.creatorText}>{creatorYearText}</Text>
+          ) : null}
+
+          {/* 저장한 날짜 */}
+          <Text style={sheetStyles.dateText}>{formatDate(node.created_at)}</Text>
 
           <View style={sheetStyles.divider} />
 
           {/* 설명 */}
           {node.description ? (
-            <>
-              <Text style={sheetStyles.sectionLabel}>설명</Text>
-              <View style={sheetStyles.descBox}>
-                <Text style={sheetStyles.descText}>{node.description}</Text>
-              </View>
-            </>
+            <View style={sheetStyles.descBox}>
+              <Text style={sheetStyles.descText}>{node.description}</Text>
+            </View>
           ) : null}
 
           {/* 감정 태그 */}
           {node.emotion_tags && node.emotion_tags.length > 0 ? (
-            <View style={sheetStyles.tagsRow}>
+            <View style={sheetStyles.tagRow}>
               {node.emotion_tags.map((tag, i) => (
                 <View key={i} style={sheetStyles.tag}>
                   <Text style={sheetStyles.tagText}>
@@ -134,9 +160,27 @@ function ArchiveDetailSheet({
             </View>
           ) : null}
 
+          {/* 장르 태그 (영화만) */}
+          {genres && genres.length > 0 ? (
+            <View style={sheetStyles.tagRow}>
+              {genres.map((g, i) => (
+                <View key={i} style={sheetStyles.genreTag}>
+                  <Text style={sheetStyles.genreTagText}>{g}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          <View style={sheetStyles.divider} />
+
           {/* 여정 지도로 이동 */}
           <TouchableOpacity style={sheetStyles.navBtn} onPress={onNavigateToMap}>
             <Text style={sheetStyles.navBtnText}>해당 여정지도로 이동</Text>
+          </TouchableOpacity>
+
+          {/* 아카이브 해제 */}
+          <TouchableOpacity style={sheetStyles.unarchiveBtn} onPress={onUnarchive}>
+            <Text style={sheetStyles.unarchiveBtnText}>아카이브 해제</Text>
           </TouchableOpacity>
         </Pressable>
       </Pressable>
@@ -206,6 +250,7 @@ export default function ArchiveScreen() {
     fetchMore,
     setMapFilter,
     setDomainFilter,
+    unarchiveNode,
   } = useArchiveStore();
 
   const [sheetNode, setSheetNode] = useState<Node | null>(null);
@@ -232,6 +277,12 @@ export default function ArchiveScreen() {
     if (!sheetNode) return;
     setSheetVisible(false);
     navigation.navigate("Map", { mapId: sheetNode.map_id });
+  };
+
+  const handleUnarchive = async () => {
+    if (!sheetNode) return;
+    setSheetVisible(false);
+    await unarchiveNode(sheetNode.map_id, sheetNode.id);
   };
 
   return (
@@ -284,7 +335,7 @@ export default function ArchiveScreen() {
       {/* 타임라인 리스트 */}
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#C084A0" />
+          <ActivityIndicator size="large" color={Colors.accent.primary} />
         </View>
       ) : (
         <FlatList
@@ -302,13 +353,13 @@ export default function ArchiveScreen() {
           }
           ListFooterComponent={
             isLoadingMore ? (
-              <ActivityIndicator color="#C084A0" style={styles.footerSpinner} />
+              <ActivityIndicator color={Colors.accent.primary} style={styles.footerSpinner} />
             ) : null
           }
           renderItem={({ item, index }) => (
             <ArchiveCard
               node={item}
-              mapTitle={mapLookup[item.map_id] ?? "지도"}
+              mapTitle={item.map_title ?? mapLookup[item.map_id] ?? "지도"}
               isFirst={index === 0}
               isLast={index === nodes.length - 1}
               onPress={() => handleCardPress(item)}
@@ -320,10 +371,11 @@ export default function ArchiveScreen() {
       {/* 아카이브 상세 BottomSheet */}
       <ArchiveDetailSheet
         node={sheetNode}
-        mapTitle={sheetNode ? (mapLookup[sheetNode.map_id] ?? "지도") : ""}
+        mapTitle={sheetNode ? (sheetNode.map_title ?? mapLookup[sheetNode.map_id] ?? "지도") : ""}
         visible={sheetVisible}
         onClose={() => setSheetVisible(false)}
         onNavigateToMap={handleNavigateToMap}
+        onUnarchive={handleUnarchive}
       />
     </View>
   );
@@ -333,7 +385,7 @@ export default function ArchiveScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0A0E1A",
+    backgroundColor: Colors.background.void,
   },
   filterRow: {
     paddingHorizontal: 16,
@@ -352,18 +404,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: "#1A1830",
+    backgroundColor: Colors.background.card,
   },
   pillActive: {
-    backgroundColor: "#C084A0",
+    backgroundColor: Colors.accent.primary,
   },
   pillText: {
     fontSize: 13,
-    color: "#AAAACC",
+    color: Colors.text.moonmist,
     fontWeight: "600",
   },
   pillTextActive: {
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
   listContent: {
     paddingHorizontal: 20,
@@ -380,7 +432,7 @@ const styles = StyleSheet.create({
   timelineLine: {
     width: 2,
     flex: 1,
-    backgroundColor: "#2A2845",
+    backgroundColor: Colors.ui.hover,
   },
   timelineDot: {
     width: 10,
@@ -395,7 +447,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     marginBottom: 12,
-    backgroundColor: "#141B2D",
+    backgroundColor: Colors.background.modal,
     borderRadius: 14,
     padding: 16,
     gap: 6,
@@ -407,7 +459,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   mapBadge: {
-    backgroundColor: "#C084A0",
+    backgroundColor: Colors.accent.primary,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -416,21 +468,21 @@ const styles = StyleSheet.create({
   mapBadgeText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
   },
   dateText: {
     fontSize: 12,
-    color: "#555577",
+    color: Colors.text.muted,
   },
   cardTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     lineHeight: 24,
   },
   cardDomain: {
     fontSize: 13,
-    color: "#AAAACC",
+    color: Colors.text.moonmist,
   },
   center: {
     flex: 1,
@@ -440,7 +492,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 15,
-    color: "#555577",
+    color: Colors.text.muted,
   },
   footerSpinner: {
     marginVertical: 16,
@@ -450,103 +502,123 @@ const styles = StyleSheet.create({
 const sheetStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end",
+    backgroundColor: Colors.background.overlay,
+    justifyContent: "center",
+    paddingHorizontal: 20,
   },
   sheet: {
-    backgroundColor: "#151D30",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: Colors.background.nebulaBase,
+    borderRadius: 20,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 40,
     gap: 0,
+    maxHeight: "80%",
   },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#2A2845",
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  thumbnail: {
+    width: "100%",
+    height: 180,
+    borderRadius: 12,
     marginBottom: 12,
   },
-  mapBadge: {
-    backgroundColor: "#C084A0",
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    maxWidth: "70%",
-  },
-  mapBadgeText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
   closeBtn: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    zIndex: 10,
     padding: 4,
   },
   closeBtnText: {
     fontSize: 18,
-    color: "#6B7A99",
+    color: Colors.text.dusk,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  mapBadge: {
+    backgroundColor: Colors.accent.orbit,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  mapBadgeText: {
+    fontSize: 12,
+    color: Colors.text.starlight,
+  },
+  domainBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  domainBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.text.starlight,
   },
   title: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.starlight,
     marginBottom: 6,
   },
-  meta: {
+  creatorText: {
     fontSize: 13,
-    color: "#6B7A99",
-    marginBottom: 16,
+    color: Colors.text.moonmist,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  dateText: {
+    fontSize: 12,
+    color: Colors.text.dusk,
+    marginBottom: 12,
   },
   divider: {
     height: 1,
-    backgroundColor: "#1E293B",
-    marginBottom: 16,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginBottom: 8,
+    backgroundColor: Colors.background.comet,
+    marginBottom: 12,
   },
   descBox: {
-    backgroundColor: "#0F172A",
+    backgroundColor: Colors.background.dust,
     borderRadius: 12,
     padding: 14,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   descText: {
     fontSize: 14,
-    color: "#CBD5E1",
+    color: Colors.text.moonmist,
     lineHeight: 22,
   },
-  tagsRow: {
+  tagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 24,
+    gap: 6,
+    marginBottom: 12,
   },
   tag: {
-    backgroundColor: "#1E293B",
+    backgroundColor: Colors.accent.orbit,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
   },
   tagText: {
-    fontSize: 13,
-    color: "#A0AEC0",
-    fontWeight: "600",
+    fontSize: 12,
+    color: Colors.text.starlight,
+  },
+  genreTag: {
+    backgroundColor: Colors.background.dust,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  genreTagText: {
+    fontSize: 12,
+    color: Colors.text.moonmist,
   },
   navBtn: {
-    backgroundColor: "#C084A0",
+    backgroundColor: Colors.accent.primary,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: "center",
@@ -554,6 +626,19 @@ const sheetStyles = StyleSheet.create({
   navBtnText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.text.primary,
+  },
+  unarchiveBtn: {
+    marginTop: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.semantic.errorBorder,
+    alignItems: "center",
+  },
+  unarchiveBtnText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.semantic.errorBorder,
   },
 });
