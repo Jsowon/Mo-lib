@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 _TOKEN_URL = "https://accounts.spotify.com/api/token"
 _SEARCH_URL = "https://api.spotify.com/v1/search"
+_ARTISTS_URL = "https://api.spotify.com/v1/artists"
 _EXPIRY_BUFFER_SECONDS = 60
 
 
@@ -84,6 +85,21 @@ class SpotifyClient:
             response.raise_for_status()
             data = response.json()
         return data["tracks"]["items"]
+
+    async def get_artists(self, artist_ids: list[str]) -> list[dict]:
+        """아티스트 ID 목록으로 장르 정보 조회 (최대 50개)."""
+        if not artist_ids:
+            return []
+        token = await self._ensure_token()
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                _ARTISTS_URL,
+                headers={"Authorization": f"Bearer {token}"},
+                params={"ids": ",".join(artist_ids[:50])},
+            )
+            response.raise_for_status()
+            data = response.json()
+        return [a for a in data.get("artists", []) if a]
 
 
 spotify_client = SpotifyClient()

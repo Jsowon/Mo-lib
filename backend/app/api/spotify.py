@@ -43,6 +43,29 @@ async def search_music(
             results=[], total=0, error="Spotify 서비스에 연결할 수 없습니다."
         )
 
+    # 트랙 검색 결과에는 장르가 없으므로 Artist API로 장르 보충
+    artist_ids = list(
+        {a["id"] for item in items for a in item.get("artists", []) if a.get("id")}
+    )
+    artist_genres: dict[str, list[str]] = {}
+    if artist_ids:
+        try:
+            artist_data = await spotify_client.get_artists(artist_ids)
+            artist_genres = {a["id"]: a.get("genres", []) for a in artist_data}
+        except Exception:
+            logger.warning("Spotify Artist API 장르 조회 실패 — 장르 없이 반환")
+
+    def get_track_genres(item: dict) -> list[str]:
+        seen: set[str] = set()
+        genres: list[str] = []
+        for a in item.get("artists", []):
+            for g in artist_genres.get(a.get("id", ""), []):
+                if g not in seen:
+                    seen.add(g)
+                    genres.append(g)
+        return genres
+
     return MusicSearchResponse(
-        results=[normalize_spotify_track(i) for i in items], total=len(items)
+        results=[normalize_spotify_track(i, genres=get_track_genres(i)) for i in items],
+        total=len(items),
     )

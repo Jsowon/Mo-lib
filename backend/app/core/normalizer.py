@@ -37,11 +37,11 @@ class ContentItem(BaseModel):
     thumbnail_url: list[str] = []
 
 
-def normalize_spotify_track(item: dict) -> ContentItem:
+def normalize_spotify_track(item: dict, genres: list[str] | None = None) -> ContentItem:
     """Spotify Search API track 객체 → ContentItem.
 
-    genre: Spotify track 검색 응답에 장르가 없으므로 빈 리스트.
-           장르가 필요하면 Artist API를 별도 호출해 genres 필드를 전달할 것.
+    genres: Artist API에서 조회한 장르 목록. 트랙 검색 응답에는 장르가 없으므로
+            호출 측에서 별도로 fetch한 아티스트 장르를 전달해야 한다.
     """
     artists = [a["name"] for a in item.get("artists", [])]
 
@@ -52,7 +52,7 @@ def normalize_spotify_track(item: dict) -> ContentItem:
         external_id=item.get("id", ""),
         title=item.get("name", ""),
         description="",
-        genre=item.get("genres", []),
+        genre=genres or [],
         creator=", ".join(artists),
         keywords=[],
         thumbnail_url=thumbnail_list,
