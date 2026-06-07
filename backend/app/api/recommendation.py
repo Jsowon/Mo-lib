@@ -54,22 +54,28 @@ def normalize_metadata(domain: str, metadata: dict) -> dict:
 
 
 async def fetch_image_url(
-    domain: str, title: str, original_title: str | None = None
+    domain: str,
+    title: str,
+    original_title: str | None = None,
+    creator: str | None = None,
 ) -> str | None:
-    search_query = original_title if original_title else title
+    base_query = original_title if original_title else title
     try:
         if domain == "movie":
-            results = await tmdb_client.search_movies(query=search_query, limit=1)
+            # TMDB는 제목 전용 검색 — creator 추가 시 결과 정확도가 낮아짐
+            results = await tmdb_client.search_movies(query=base_query, limit=1)
             if results:
                 item = normalize_tmdb_movie(results[0])
                 return item.thumbnail_url[0] if item.thumbnail_url else None
         elif domain == "book":
-            results = await aladin_client.search_books(query=search_query, limit=1)
+            book_query = f"{base_query} {creator}" if creator else base_query
+            results = await aladin_client.search_books(query=book_query, limit=1)
             if results:
                 item = normalize_aladin_book(results[0])
                 return item.thumbnail_url[0] if item.thumbnail_url else None
         elif domain == "music":
-            results = await spotify_client.search_tracks(query=search_query, limit=1)
+            music_query = f"artist:{creator} {base_query}" if creator else base_query
+            results = await spotify_client.search_tracks(query=music_query, limit=1)
             if results:
                 item = normalize_spotify_track(results[0])
                 return item.thumbnail_url[0] if item.thumbnail_url else None
@@ -131,9 +137,21 @@ async def get_recommendation(
         for domain, items in ai_response.recommendations.items()
         for item in items
     ]
+
+    def get_creator(domain: str, item) -> str | None:
+        if domain == "movie":
+            return item.director
+        elif domain == "book":
+            return item.author
+        elif domain == "music":
+            return item.artist
+        return None
+
     image_urls = await asyncio.gather(
         *[
-            fetch_image_url(domain, item.title, item.original_title)
+            fetch_image_url(
+                domain, item.title, item.original_title, get_creator(domain, item)
+            )
             for domain, item in flat_items
         ]
     )
