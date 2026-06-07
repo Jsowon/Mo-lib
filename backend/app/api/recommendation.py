@@ -148,7 +148,9 @@ async def get_recommendation(
 
     image_urls = await asyncio.gather(
         *[
-            fetch_image_url(domain, item.title, item.original_title, get_creator(domain, item))
+            fetch_image_url(
+                domain, item.title, item.original_title, get_creator(domain, item)
+            )
             for domain, item in flat_items
         ]
     )
