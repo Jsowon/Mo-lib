@@ -7,6 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.aladin import aladin_client
 from app.core.exceptions import AIException
+from app.core.normalizer import (
+    normalize_aladin_book,
+    normalize_spotify_track,
+    normalize_tmdb_movie,
+)
 from app.core.spotify import spotify_client
 from app.core.tmdb import tmdb_client
 from app.database import get_db
@@ -48,23 +53,26 @@ def normalize_metadata(domain: str, metadata: dict) -> dict:
     return metadata
 
 
-async def fetch_image(domain: str, title: str) -> str | None:
-    """추천 항목 제목으로 외부 API에서 이미지 URL 조회"""
+async def fetch_image_url(
+    domain: str, title: str, original_title: str | None = None
+) -> str | None:
+    search_query = original_title if original_title else title
     try:
         if domain == "movie":
-            items = await tmdb_client.search_movies(query=title, limit=1)
-            if items and items[0].get("poster_path"):
-                return f"https://image.tmdb.org/t/p/w500{items[0]['poster_path']}"
+            results = await tmdb_client.search_movies(query=search_query, limit=1)
+            if results:
+                item = normalize_tmdb_movie(results[0])
+                return item.thumbnail_url[0] if item.thumbnail_url else None
         elif domain == "book":
-            items = await aladin_client.search_books(query=title, limit=1)
-            if items:
-                cover = items[0].get("cover", "").replace("coversum", "cover500")
-                return cover if cover else None
+            results = await aladin_client.search_books(query=search_query, limit=1)
+            if results:
+                item = normalize_aladin_book(results[0])
+                return item.thumbnail_url[0] if item.thumbnail_url else None
         elif domain == "music":
-            items = await spotify_client.search_tracks(query=title, limit=1)
-            if items:
-                images = items[0].get("album", {}).get("images", [])
-                return images[0]["url"] if images else None
+            results = await spotify_client.search_tracks(query=search_query, limit=1)
+            if results:
+                item = normalize_spotify_track(results[0])
+                return item.thumbnail_url[0] if item.thumbnail_url else None
     except Exception:
         return None
     return None
@@ -124,7 +132,10 @@ async def get_recommendation(
         for item in items
     ]
     image_urls = await asyncio.gather(
-        *[fetch_image(domain, item.title) for domain, item in flat_items]
+        *[
+            fetch_image_url(domain, item.title, item.original_title)
+            for domain, item in flat_items
+        ]
     )
     for (_, item), image_url in zip(flat_items, image_urls):
         item.image_url = image_url

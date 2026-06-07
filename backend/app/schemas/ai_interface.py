@@ -61,6 +61,7 @@ class AIRecommendationRequest(BaseModel):
 
 class AIRecommendationItem(BaseModel):
     title: str
+    original_title: Optional[str] = None
     reason: str
     tags: list[str]
     connection_keyword: str
