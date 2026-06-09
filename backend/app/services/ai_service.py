@@ -47,6 +47,7 @@ def parse_ai_response(raw: dict) -> AIRecommendationResponse:
                 AIRecommendationItem(
                     title=item["title"],
                     original_title=item.get("original_title"),
+                    year=item.get("year"),
                     author=item.get("author"),
                     artist=item.get("artist"),
                     reason=item["reason"],
