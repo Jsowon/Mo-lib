@@ -13,19 +13,24 @@ class TMDBClient:
     def __init__(self) -> None:
         self.settings = get_settings()
 
-    async def search_movies(self, query: str, limit: int = 10) -> list[dict]:
+    async def search_movies(
+        self, query: str, limit: int = 10, year: int | None = None
+    ) -> list[dict]:
         """TMDB 영화 검색 API 호출"""
+        params: dict = {
+            "api_key": self.settings.TMDB_API_KEY,
+            "query": query,
+            "language": "ko-KR",
+            "include_adult": "false",
+            "page": 1,
+        }
+        if year:
+            params["primary_release_year"] = year
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.get(
                     _SEARCH_URL,
-                    params={
-                        "api_key": self.settings.TMDB_API_KEY,
-                        "query": query,
-                        "language": "ko-KR",
-                        "include_adult": "false",
-                        "page": 1,
-                    },
+                    params=params,
                 )
                 response.raise_for_status()
                 data = response.json()

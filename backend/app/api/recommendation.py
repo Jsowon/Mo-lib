@@ -58,12 +58,14 @@ async def fetch_image_url(
     title: str,
     original_title: str | None = None,
     creator: str | None = None,
+    year: int | None = None,
 ) -> str | None:
     base_query = original_title if original_title else title
     try:
         if domain == "movie":
-            # TMDB는 제목 전용 검색 — creator 추가 시 결과 정확도가 낮아짐
-            results = await tmdb_client.search_movies(query=base_query, limit=1)
+            results = await tmdb_client.search_movies(
+                query=base_query, limit=1, year=year
+            )
             if results:
                 item = normalize_tmdb_movie(results[0])
                 return item.thumbnail_url[0] if item.thumbnail_url else None
@@ -150,7 +152,11 @@ async def get_recommendation(
     image_urls = await asyncio.gather(
         *[
             fetch_image_url(
-                domain, item.title, item.original_title, get_creator(domain, item)
+                domain,
+                item.title,
+                item.original_title,
+                get_creator(domain, item),
+                item.year if domain == "movie" else None,
             )
             for domain, item in flat_items
         ]
