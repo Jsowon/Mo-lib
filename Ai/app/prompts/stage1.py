@@ -10,7 +10,7 @@ STAGE1_PROMPT_MOVIE = (
     "- connection_keyword: 타 도메인으로 확장하기 가장 적합한 핵심 단어 1개\n\n"
     "[제약]\n"
     "- 순수 JSON만 출력. 코드블록·자연어 문구·Markdown 서식 금지.\n"
-    "- 주어진 메타데이터 내에서만 추론. 모든 값 한국어.\n"
+    "- 주어진 메타데이터 내에서만 추론.\n"
     "- tags, connection_keyword는 반드시 단어 형태.\n\n"
     "[출력 스키마]\n"
     '{"analysis": {"emotion": "", "mood": "", "narrative_feature": "", '
@@ -28,7 +28,7 @@ STAGE1_PROMPT_BOOK = (
     "- connection_keyword: 타 도메인으로 확장하기 가장 적합한 핵심 단어 1개\n\n"
     "[제약]\n"
     "- 순수 JSON만 출력. 코드블록·자연어 문구·Markdown 서식 금지.\n"
-    "- 주어진 메타데이터 내에서만 추론. 모든 값 한국어.\n"
+    "- 주어진 메타데이터 내에서만 추론.\n"
     "- tags, connection_keyword는 반드시 단어 형태.\n\n"
     "[출력 스키마]\n"
     '{"analysis": {"emotion": "", "mood": "", "narrative_feature": "", '
@@ -46,7 +46,7 @@ STAGE1_PROMPT_MUSIC = (
     "- connection_keyword: 타 도메인으로 확장하기 가장 적합한 핵심 단어 1개\n\n"
     "[제약]\n"
     "- 순수 JSON만 출력. 코드블록·자연어 문구·Markdown 서식 금지.\n"
-    "- synopsis/description 없음. mood_tags에서만 추론. 모든 값 한국어.\n"
+    "- synopsis/description 없음. mood_tags에서만 추론.\n"
     "- tags, connection_keyword는 반드시 단어 형태.\n\n"
     "[출력 스키마]\n"
     '{"analysis": {"emotion": "", "mood": "", "narrative_feature": "", '
@@ -55,6 +55,7 @@ STAGE1_PROMPT_MUSIC = (
 
 _PROMPT_MAP = {
     "movie": STAGE1_PROMPT_MOVIE,
+    "film": STAGE1_PROMPT_MOVIE, #film도 동일하게 영화로 받게함
     "book": STAGE1_PROMPT_BOOK,
     "music": STAGE1_PROMPT_MUSIC,
 }
