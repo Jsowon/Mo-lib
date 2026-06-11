@@ -188,9 +188,10 @@ export default function RecommendationScreen() {
 
       // 노드 추가
       await nodesAPI.add(mapId, {
-        source_node_id: null,
         title: selectedItem.title,
         domain: selectedItem.domain,
+        step_order: 0,
+        is_root: true,
         description: selectedItem.description,
         image_url: selectedItem.image_url,
         emotion_tags: selectedItem.emotion_tags,
