@@ -113,7 +113,16 @@ async def get_recommendation(
     if cached:
         now = datetime.now(timezone.utc)
         if cached.expires_at is None or cached.expires_at > now:
-            return RecommendationResponse(**cached.result)
+            cached_response = RecommendationResponse(**cached.result)
+            if request.exclude_titles:
+                exclude_set = {t.lower() for t in request.exclude_titles if t}
+                for items in cached_response.recommendations.values():
+                    items[:] = [
+                        i
+                        for i in items
+                        if i.title and i.title.lower() not in exclude_set
+                    ]
+            return cached_response
         await db.delete(cached)
         await db.flush()
 
@@ -165,7 +174,14 @@ async def get_recommendation(
     for (_, item), image_url in zip(flat_items, image_urls):
         item.image_url = image_url
 
-    # 4. 응답 구성
+    # 4. 응답 구성 (이미 맵에 있는 콘텐츠 제외)
+    if request.exclude_titles:
+        exclude_set = {t.lower() for t in request.exclude_titles if t}
+        for items in ai_response.recommendations.values():
+            items[:] = [
+                i for i in items if i.title and i.title.lower() not in exclude_set
+            ]
+
     response = RecommendationResponse(
         recommendations=ai_response.recommendations, map_title=ai_response.map_title
     )

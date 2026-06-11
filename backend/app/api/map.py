@@ -335,6 +335,13 @@ async def continue_map(
 
     ai_response = await get_ai_recommendation(ai_request)
 
+    if request.exclude_titles:
+        exclude_set = {t.lower() for t in request.exclude_titles if t}
+        for items in ai_response.recommendations.values():
+            items[:] = [
+                i for i in items if i.title and i.title.lower() not in exclude_set
+            ]
+
     return RecommendationResponse(
         recommendations=ai_response.recommendations, map_title=ai_response.map_title
     )

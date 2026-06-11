@@ -16,6 +16,7 @@ class RecommendationRequest(BaseModel):
     metadata: dict
     history: list[HistoryItem] = []
     exclude_domains: list[str] = []
+    exclude_titles: list[str] = []
 
 
 # ─────────────────────────────────────────
