@@ -590,6 +590,10 @@ function MapCanvasContent() {
 
     try {
       // 1. 추천 API 호출
+      const existingTitles = selectedMapNodes
+        .filter(n => n.nodeStatus === 'confirmed')
+        .map(n => n.title);
+
       const reqBody = {
         domain: nodeDomain,
         content_id: contentId,
@@ -598,6 +602,7 @@ function MapCanvasContent() {
         emotion_tags: sourceNode.emotion_tags || [],
         history: history,
         exclude_domains: [],
+        exclude_titles: existingTitles,
       };
       console.log('[추천 요청]', JSON.stringify(reqBody));
       const res = await recommendationAPI.get(reqBody);
