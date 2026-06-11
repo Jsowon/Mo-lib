@@ -72,6 +72,7 @@ export interface RecommendationRequest {
   metadata: Record<string, unknown>; // 백엔드 required 필드
   history?: unknown[];
   exclude_domains?: string[];
+  exclude_titles?: string[];
 }
 
 export interface AIRecommendationItem {
