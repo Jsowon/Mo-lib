@@ -120,7 +120,12 @@ async def get_recommendation(
                     items[:] = [
                         i
                         for i in items
-                        if i.title and i.title.lower() not in exclude_set
+                        if i.title
+                        and i.title.lower() not in exclude_set
+                        and (
+                            not i.original_title
+                            or i.original_title.lower() not in exclude_set
+                        )
                     ]
             return cached_response
         await db.delete(cached)
@@ -179,7 +184,13 @@ async def get_recommendation(
         exclude_set = {t.lower() for t in request.exclude_titles if t}
         for items in ai_response.recommendations.values():
             items[:] = [
-                i for i in items if i.title and i.title.lower() not in exclude_set
+                i
+                for i in items
+                if i.title
+                and i.title.lower() not in exclude_set
+                and (
+                    not i.original_title or i.original_title.lower() not in exclude_set
+                )
             ]
 
     response = RecommendationResponse(
