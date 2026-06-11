@@ -24,6 +24,8 @@ jobs:
             cd backend
             cp /home/${{ secrets.EC2_USER }}/.env.molib .env
 
+            docker system prune -af
+
             docker compose -f docker-compose.prod.yml up -d --build
 
             docker compose -f docker-compose.prod.yml exec -T api \
